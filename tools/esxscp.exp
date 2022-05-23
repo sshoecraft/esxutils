@@ -1,0 +1,22 @@
+#!/usr/bin/expect -f
+#exp_internal 1
+
+set args [lrange $argv 0 end]
+
+if {$argc <1} {
+	exit
+}
+
+set timeout 30
+spawn scp $args
+sleep 2
+expect {
+	"(yes/no)? " {
+		send "yes\n"
+		sleep 1
+		exp_continue
+	}
+	"assword:" {
+		send "k1n0bi!\n"
+	}
+}

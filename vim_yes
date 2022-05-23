@@ -1,0 +1,6 @@
+find . -name Makefile | xargs egrep VIM=yes | while read n
+do
+#	echo $n
+	d=`dirname $n`
+	(cd $d && make && make install)
+done

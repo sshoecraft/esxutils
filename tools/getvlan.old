@@ -1,0 +1,48 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use XML::Simple;
+use Data::Dumper;
+use IO::File;
+
+my $debug = 0;
+sub dprintf { my $level = shift; if ($debug >= $level) { print "#"; printf(@_); } }
+
+my $host = $ARGV[0];
+unless($host) {
+        printf("usage: %s <hostname>\n",$0);
+        exit 1;
+}
+my ($shorthost,@my_domain) = split('\.',$host); my $domain = join('.',@my_domain);
+
+my $HOME = $ENV{ HOME };
+my $filename = $HOME . "/etc/genconf/" . $shorthost . ".xml";
+dprintf(1,"filename: %s\n", $filename);
+if (! -e $filename) {
+	printf("error: confg file (%s) not found!\n", $filename);
+	exit(1);
+}
+open(INPUT,$filename) or die;
+my $data = do { local $/ = <INPUT> };
+#printf("data: $data\n");
+close(INPUT);
+#$data = "";
+
+my $config = XMLin($data, KeyAttr => [ ], forcearray => [ qw(vswitch portgroup) ]);
+unless($config) {
+        printf("error: unable to parse XML config!\n");
+        exit 1;
+}
+#print Dumper($config);
+
+foreach my $vswitch (@{$config->{network}->{vswitch}}) {
+	foreach my $pg (@{$vswitch->{portgroup}}) {
+		dprintf(1,"pgname: %s\n", $pg->{name});
+		if ($pg->{name} eq "Management Network") {
+			my $vlan = $pg->{vlan};
+			$vlan = 0 unless($vlan);
+			printf("%d\n",$vlan);
+			last;
+		}
+	}
+}

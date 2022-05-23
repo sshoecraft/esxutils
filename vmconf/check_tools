@@ -1,0 +1,63 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use XML::Simple;
+use Data::Dumper;
+
+my $VM=$ARGV[0];
+$VM = "" unless $VM;
+my $cmd = "/usr/local/bin/vminfo -n " . $VM . " 2>&1";
+my $vm_data = `$cmd`;
+chomp($vm_data);
+printf("vm_data: %s\n", $vm_data);
+exit 1 if (length($vm_data) == 0);
+my ($farm,$host,$tvm,$sla,$stat,$env) = split(" ",$vm_data);
+printf("host: %s\n", $host);
+$cmd = sprintf("esxconf -x -s %s -t VirtualMachine name", $host);
+printf("cmd: %s\n", $cmd);
+$vm_data = `$cmd`;
+exit 0;
+
+
+my $table = [
+	[ '2.1.2',   9638,    0 ],
+	[ '2.5.5',  57619,    0 ],
+	[ '3.0.1',  35804,    0 ],
+	[ '3.5.0', 110268,    0 ],
+	[ '3.5.0', 153875,    0 ],
+	[ '3.5.0', 176894,    0 ],
+	[ '3.5.0', 199239,    0 ],
+	[ '3.5.0', 207095,    0 ],
+	[ '3.5.0', 213532,    0 ],
+	[ '3.5.0', 226117,    0 ],
+	[ '3.5.0', 317866,    0 ],
+	[ '4.0.0', 208167, 8194 ],
+	[ '4.1.0', 348481,    0 ],
+];
+
+#guest.toolsStatus toolsOk
+#guest.toolsVersionStatus guestToolsCurrent
+#guest.toolsRunningStatus guestToolsRunning
+#guest.toolsVersion 8194
+
+my $xml = new XML::Simple;
+my $data = $xml->XMLin("data.xml");
+#print Dumper($data);
+
+my $tools_status = $data->{toolsStatus};
+$tools_status =~ s/tools//;
+my $tools_version = $data->{toolsVersion};
+my $tools_running = $data->{toolsRunningStatus};
+$tools_running =~ s/guestTools//;
+my $tools_required = $tools_version;
+
+foreach my $rec (@$table) {
+	printf("[0]: %s, [1]: %s, [2]: %s\n", $rec->[0], $rec->[1], $rec->[2]);
+}
+
+printf("tools_status: %s, tools_running: %s, tools_version: %s, tools_required: %s\n",
+	$tools_status, $tools_running, $tools_version, $tools_required);
+
+if ($tools_status ne "Ok" or $tools_running ne "Running" or $tools_version != $tools_required) {
+	printf("*** REINSTALLING\n");
+}

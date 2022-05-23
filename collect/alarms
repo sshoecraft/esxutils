@@ -1,0 +1,164 @@
+#!/usr/bin/perl -w
+use strict;
+use warnings;
+use DBI;
+use File::Temp;
+
+my $do_csv = 1;
+my $testing = 1;
+my $ignore_yellow = 0;
+my $ignore_dde = 0;
+my $ignore_cpu = 1;
+my $ignore_mem = 1;
+my $ignore_agent = 0;
+my $ngdc_only = 1;
+
+my $debug = 0;
+sub dprintf { my $level = shift; printf(@_) if ($debug >= $level); }
+my $home = $ENV{ HOME };
+
+my $SENDTO = "stephen.shoecraft\@mckesson.com";
+#printf("sendto: %s\n", $SENDTO);
+#exit 0;
+
+my $dbh = DBI->connect("DBI:mysql:esxadmin",'esxadmin','G3tB3nt')
+	or die("Couldn't connect to database: " . DBI->errstr);
+my $alarms = $dbh->prepare("SELECT farms.name AS farm, alarms.host_id AS host_id, hosts.name AS host, hosts.version AS version, alarms.status AS status, alarms.alarm AS alarm, alarms.reported AS reported from host_alarms as alarms join hosts on (alarms.host_id = hosts.id) left join farms on (hosts.farm_id = farms.id)");
+my $wipe_alarms = $dbh->prepare("DELETE FROM host_alarms");
+
+my $db2 = DBI->connect("DBI:mysql:sysadm",'sysadm_ro');
+my $ci = $db2->prepare("SELECT HP_CI_STAT_DN FROM ci_vw WHERE ci_nm = ?");
+
+my $repinc = $dbh->prepare("UPDATE host_alarms SET reported = reported + 1 WHERE host_id = ? AND alarm = ?");
+
+my $format = "%s,%s,%s,%s,%s\n";
+
+my $tmpfile = mktemp("/tmp/aaXXXXXX");
+
+my $count = 0;
+dprintf(1,"executing...\n");
+$alarms->execute();
+dprintf(1,"rows: %d\n", $alarms->rows);
+exit(0) if (not $alarms->rows);
+dprintf(1,"opening outfile...\n");
+open(OUT,"|sort -k2 -t, > $tmpfile");
+dprintf(1,"processing recs...\n");
+while(my @alarms_rec = $alarms->fetchrow_array()) {
+	my ($farm,$host_id,$host,$vers,$status,$alarm,$reported) = @alarms_rec;
+
+	dprintf(2,"host: %s(%d), status: %s, alarm: %s\n", $host, $reported, $status, $alarm);
+
+	# Already reported?
+	next if ($reported);
+
+	# Inc reported count even if we dont report (will clear from db)
+	$repinc->execute($host_id,"$alarm") if (!$testing);
+
+	# Ignore bogus
+	next if (index($alarm,"Status of other host") ge 0);
+
+	# Ignore yellow alarms?
+	next if ($ignore_yellow and $status eq "yellow");
+
+	# Ignore yellow DDE hosts?
+	next if ($ignore_dde and index($farm,"DDE") ge 0 and $status ne "red");
+
+	# Ignore CPU alarms?
+	next if ($ignore_cpu and index($alarm,"cpu") gt 0);
+
+	# Ignore Memory alarms?
+	next if ($ignore_mem and index($alarm,"emory") gt 0);
+
+	# Ignore HA Agent alarms?
+	next if ($ignore_agent and index($alarm,"agent") gt 0);
+
+	# Skip decom hosts
+	my $cistatus;
+	$ci->execute($host);
+	if ($ci->rows) {
+		my @ci_rec = $ci->fetchrow_array();
+		($cistatus) = @ci_rec;
+	} else {
+		$cistatus = "unknown";
+	}
+	dprintf(2,"cistatus: %s\n", $cistatus);
+
+	# Skip decomm'd hosts
+	next if ($cistatus eq "decommissioned" or $cistatus eq "move to obsolescence");
+
+	# Skip all hosts that are not release or active
+	next if ($cistatus ne "release" and $cistatus ne "active");
+
+	# Skip all non-ngdc hosts
+	if ($ngdc_only) {
+		next unless ($host =~ m/^[d|g][0-9]t/ or $host =~ m/^s[0-9][0-9]t/);
+	}
+
+	printf(OUT $format, $farm, $host, $vers, $status, $alarm);
+
+	$count++;
+}
+#printf(OUT "\n");
+close OUT;
+
+my $report = mktemp("/tmp/arXXXXXX");
+
+dprintf(1,"count: %d\n", $count);
+my $conx_errors = 0;
+if ($count > 0) {
+	my $cmd;
+
+	open(OUT,">",$report);
+#	printf(OUT "From: %s\n",$SENDFROM);
+	printf(OUT "Subject: ESX hosts with active alarms\n\n\n");
+	$format = "%-18.18s %-30.30s %-8.8s %-8.8s %-80.80s\n";
+	printf(OUT $format, "Farm", "Host", "Version", "Status", "Alarm");
+	printf(OUT $format, "-----------------------------", "------------------------------", "----------", "------------------", "-------------------------------------");
+	open(IN,"<","$tmpfile");
+	while (<IN>) {
+		chomp($_);
+		dprintf(2,"line: %s\n", $_);
+		my ($farm,$host,$version,$status,$alarm) = split(',',$_);
+		printf(OUT $format, $farm, $host, $version, $status, $alarm);
+		$conx_errors++ if ($alarm =~ m/connect/);
+	}
+	close(IN);
+	close(OUT);
+}
+if ($conx_errors) {
+	open(OUT,">>",$report);
+	printf(OUT "\n");
+	printf(OUT "Connection Status:\n");
+	close(OUT);
+	open(IN,"<","$tmpfile");
+	while (<IN>) {
+		chomp($_);
+		my ($farm,$host,$version,$status,$alarm) = split(',',$_);
+		if ($alarm =~ m/connect/) {
+			system("/usr/local/bin/esxstatus $host >> $report");
+		}
+	}
+	close(IN);
+}
+if ($count > 0) {
+	if ($do_csv) {
+		open(OUT,"| uuencode alarms.csv >> $report");
+		open(IN,"<","$tmpfile");
+		$format = "%s,%s,%s,%s,%s\n";
+		while (<IN>) {
+			chomp($_);
+			my ($farm,$host,$version,$status,$alarm) = split(',',$_);
+			printf(OUT $format, $farm, $host, $version, $status, $alarm);
+		}
+		close(IN);
+		close(OUT);
+	}
+	if ($testing) {
+		system("cat $report | more");
+	} else {
+		system("cat $report | /usr/sbin/sendmail $SENDTO");
+	}
+	unlink("$report");
+}
+unlink($tmpfile);
+exit(0);

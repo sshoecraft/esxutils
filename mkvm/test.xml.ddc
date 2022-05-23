@@ -1,0 +1,24 @@
+<config>
+	<name>+++NAME+++</name>
+	<datacenter>DDC</datacenter>
+	<computepath>DDC-UAT</computepath>
+	<memorySizeMB>4096</memorySizeMB>
+	<numCpu>2</numCpu>
+	<disks>
+		<disk>
+			<size>16384</size>
+			<thin>0</thin>
+		</disk>
+	</disks>
+	<nics>
+		<nic>
+			<type>vmxnet3</type>
+			<network>DDC-VM01+02-10.5.208.x</network>
+		</nic>
+	</nics>
+	<cdrom>
+		<path>[coe_install (1)] +++ISO+++</path>
+	</cdrom>
+	<guestId>rhel6_64Guest</guestId>
+	<annotation>UAT-TOP-APP01</annotation>
+</config>

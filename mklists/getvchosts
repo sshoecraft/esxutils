@@ -1,0 +1,4 @@
+while IFS=, read -r version cluster host server user rest
+do
+	esxconf -s $server -u $user -t HostSystem name | grep name | sort -u | awk '{ print $2 }'
+done < ~/etc/vcservers

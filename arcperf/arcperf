@@ -1,0 +1,31 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use DBI;
+use DateTime;
+
+#use File::Temp;
+#use XML::Simple qw(:strict);
+#use Data::Dumper;
+#use IO::File;
+
+my $debug = 0;
+sub dprintf { my $level = shift; printf(@_) if ($debug >= $level); }
+
+my $ESXADMIN_SERVER = "tools.uprd.usoncology.unx";
+
+my $dbh = DBI->connect("DBI:mysql:esxadmin:$ESXADMIN_SERVER",'esxadmin_ro') or die "Couldn't connect to database: " . DBI->errstr;
+
+my $dt = DateTime->now;
+print join ' ', $dt->ymd, $dt->hms;
+print "Now: " . $dt->datetime() . "\n";
+print "Now (epoch): " . $dt->epoch() . "\n";
+
+my $two_days_from_now = $dt->add(days => 2);
+print "Two days from now: " . $two_days_from_now->datetime() . "\n";
+print "Two days from now (epoch): " . $two_days_from_now->epoch() . "\n";
+#http://search.cpan.org/~drolsky/DateTime-1.18/lib/DateTime.pm
+
+# Finally, archive older than 6
+#archive(range => "time < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 6 month)";
+#$dbh->do("delete from host_perf where time < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 6 month)");

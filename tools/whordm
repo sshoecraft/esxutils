@@ -1,0 +1,70 @@
+#!/bin/bash 
+# hosts: g5t1963h / 0e:11, g2t0177h / 0E:58
+usage() {
+	echo "usage: whordm <host> <cu:ldev>"
+	exit 1
+}
+test -z "$1" && usage
+test -z "$2" && usage
+host="$1"
+lun=$2
+#echo "script: $script, host: $host, lun: $lun"
+if test "$host" = "doit"; then
+	if test `vmware -v | grep -c 3.5.0` -gt 0; then
+		dev=`/usr/local/bin/xplist | grep "$lun" | awk '{ print $1 }'`
+		test -z "$dev" && exit 1
+		hba=`/usr/sbin/esxcfg-vmhbadevs | grep "$dev" | awk '{ print $1 }'`
+		test -z "$hba" && exit 1
+		find /vmfs/volumes -name "*-rdmp.vmdk" | while read n
+		do
+			t=`echo "$n" | sed "s:-rdmp::"`
+			f=`/usr/sbin/vmkfstools -q "$t" | grep "Maps to:" | awk -F"Maps to: " '{ print $2 }'`
+			x=`echo $f | awk -F: '{ print $1":"$2":"$3 }'`
+			if test "$x" = "$hba"; then
+				d=`dirname "$n"`
+				cd "$d"
+				b=`pwd`
+				basename "$b"
+				break
+			fi
+		done
+	else
+		vlun=`echo "$lun" | sed "s|:||"`
+		find /vmfs/volumes -name "*-rdmp.vmdk" | while read n
+		do
+			t=`echo "$n" | sed "s:-rdmp::"`
+			vml=`/usr/sbin/vmkfstools -q "$t" | grep "Maps to:" | awk -F"Maps to: " '{ print $2 }'`
+			if test `ls -l /vmfs/devices/disks | grep "$vml" | grep -c $vlun'$'` -gt 0; then
+				d=`dirname "$n"`
+				cd "$d"
+				b=`pwd`
+				basename "$b"
+				break
+			fi
+		done
+	fi
+else
+	uid=`id -u`
+	if test $uid -eq 0; then
+		echo "do not run this as root!"
+		exit 1
+	fi
+	me=`readlink -f $0`
+	SCRIPT=`basename $0`
+#	echo me: $me, SCRIPT: $SCRIPT
+timeout 2 esxconf -a -s "$1" > /dev/null 2>&1
+if test $? -eq 0; then
+	tmp=/tmp/whordm.$$
+        /usr/local/bin/esxshell start $1
+        /usr/local/lib/tools/esxcmd $1 "rm -f /tmp/$SCRIPT" > /dev/null
+        /usr/local/lib/tools/esxscp $me $1:/tmp > /dev/null
+        /usr/local/lib/tools/esxcmd $1 "sh /tmp/$SCRIPT doit $lun" > $tmp 2>&1
+        /usr/local/bin/esxshell stop $1
+	cat $tmp | sed -n 'x;$p' | grep -v -e '^~'
+else
+	TOOLS=/usr/local/lib/tools
+	/usr/local/bin/timeout 60 $TOOLS/admscp $me $host:/tmp > /dev/null
+	test $? -ne 0 && exit 1
+	/usr/local/bin/timeout 120 $TOOLS/admssh $host "sudo su - root -c \"chmod +x /tmp/$SCRIPT; sh /tmp/$SCRIPT doit $lun; rm -f /tmp/$SCRIPT\""
+fi
+fi

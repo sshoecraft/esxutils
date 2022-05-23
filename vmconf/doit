@@ -1,0 +1,4 @@
+#!/bin/bash
+#echo $1
+#./vmconf $1
+./vmconf $1 > /tmp/tools/$1.log 2>&1

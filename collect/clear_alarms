@@ -1,0 +1,31 @@
+#!/usr/bin/perl -w
+use strict;
+use warnings;
+use DBI;
+
+my $dbh = DBI->connect("DBI:mysql:esxadmin",'esxadmin','G3tB3nt') or die;
+my $sel_alarms = $dbh->prepare("SELECT name FROM hosts,host_alarms WHERE (hosts.id = host_alarms.host_id) ORDER BY name");
+my $wipe_alarms = $dbh->prepare("DELETE FROM host_alarms");
+
+# Clear from VC
+#printf("Clearing from VC...\n");
+$sel_alarms->execute();
+if ($sel_alarms->rows > 0) {
+	while(my @data = $sel_alarms->fetchrow_array()) {
+		my ($name) = @data;
+		printf("Clearing alarms for host: %s\n", $name);
+		system("/usr/local/sbin/esxpost -v 0.0.0 -n -c $name > /dev/null 2>&1");
+#		my $status=system("/usr/local/sbin/esxpost -v 0.0.0 -n -c $name");
+#		printf("status: %d\n", $status);
+#		last if ($status != 0);
+	}
+}
+#exit 0;
+
+# Wipe the table
+if ($sel_alarms->execute() > 0) {
+	printf("Wiping host_alarms...\n");
+	$wipe_alarms->execute();
+}
+
+exit(0);

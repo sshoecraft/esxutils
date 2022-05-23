@@ -1,0 +1,15 @@
+echo '<?xml version="1.0"?>'
+echo '<Virtual-Machines>'
+echo "  <Virtual-Machine>"
+echo "    <Name>$1</Name>"
+echo "    <Host>$2</Host>"
+echo "    <Datacenter>$3</Datacenter>"
+echo "    <Guest-Id>$4</Guest-Id>"
+echo "    <Datastore>$5</Datastore>"
+echo "    <Disksize>$6</Disksize>"
+echo "    <Memory>$7</Memory>"
+echo "    <Number-of-Processor>$8</Number-of-Processor>"
+echo "    <Nic-Network>$9</Nic-Network>"
+echo "    <Nic-Poweron>0</Nic-Poweron>"
+echo "  </Virtual-Machine>"
+echo '</Virtual-Machines>'

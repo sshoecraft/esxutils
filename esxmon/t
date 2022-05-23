@@ -1,0 +1,4 @@
+builder usonplpvm004 `getcons usonplpvm004` esx_disk 117
+builder usonplpvm005 `getcons usonplpvm005` esx_disk 117
+builder usonplpvm006 `getcons usonplpvm006` esx_disk 117
+builder usonplpvm007 `getcons usonplpvm007` esx_disk 117

@@ -1,0 +1,17 @@
+#!/bin/bash
+test -z "$1" && exit 1
+conf=`/usr/local/bin/esxconf -s $1 -u sitescope -p need2know overallStatus`
+status=$?
+if test $status -eq 0; then
+	text=`echo $conf | awk -F: '{print $2}'`
+	if test "$text" = "green"; then
+		text="OK"
+	else
+		status=1
+	fi
+else
+	text="$conf"
+fi
+test -z "$text" && text="unknown"
+echo "$1: $text"
+exit $status

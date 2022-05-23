@@ -1,0 +1,51 @@
+#!/bin/bash
+#
+test -z "$1" && echo "usage: do_tools <rpm_name> <destdir>" && exit 1
+rpm=$1
+destdir=$2
+install_tgz() {
+	cd /var/tmp || exit 1
+	tar -zxf $destdir/$rpm
+	cd vmware-tools-distrib || exit 1
+	./vmware-install.pl -d
+	cd $destdir
+}
+if test ! -f $destdir/$rpm; then
+	echo "ERROR: $destdir/$rpm is MISSING"
+	exit 1
+fi
+# Stop current tools
+/etc/init.d/vmware-tools stop > /dev/null 2>&1
+# Remove tools
+rpm -e --nodeps VMwareTools > /dev/null 2>&1 || rpm -e --nodeps --noscripts VMwareTools > /dev/null 2>&1
+test -x /etc/vmware-tools/installer.sh && /etc/vmware-tools/installer.sh uninstall > /dev/null 2>&1
+rm -rf /etc/vmware-tools /usr/lib/vmware-tools
+# Install new tools
+if test "`echo $rpm | grep -c \.rpm$`" -gt 0; then
+	rpm -Uvh $destdir/$rpm || exit 1
+else
+	install_tgz
+	rm -rf /var/tmp/vmware-tools-distrib $destdir/vmware-installer*
+fi
+rm -f $destdir/$rpm
+# Configure
+if test -x /usr/bin/vmware-config-tools.pl; then
+	if test -x /usr/bin/make; then
+		if test -x /usr/bin/gcc; then
+			now=`date +%Y%m%d%H%M%S`
+			test -f /etc/fstab && cp /etc/fstab /etc/fstab.save.$now
+			/usr/bin/vmware-config-tools.pl -d --clobber-kernel-modules=vmxnet3
+			test $? -ne 0 && /usr/bin/vmware-config-tools.pl -d --clobber-kernel-modules=vmxnet3
+			test -f /etc/fstab.save.$now && mv /etc/fstab /etc/fstab.tools.$now; mv /etc/fstab.save.$now /etc/fstab
+		else
+			exit 1
+		fi
+	else
+		echo "ERROR: /usr/bin/make is missing!"
+		exit 1
+	fi
+else
+	echo "ERROR: /usr/bin/vmware-config-tools.pl is missing!"
+	exit 1
+fi
+exit 0

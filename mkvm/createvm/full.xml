@@ -1,0 +1,70 @@
+<CreateVM_Task xmlns="urn:vim25">
+<_this type="Folder">ha-folder-vm</_this>
+<config>
+<name>TestVM_master</name>
+<files>
+  <vmPathName>[ie-cw-esx01-local]TestVM_master/</vmPathName>
+</files>
+<numCPUs>4</numCPUs>
+<memoryMB>2048</memoryMB>
+<deviceChange>
+  <operation>add</operation>
+  <device xsi:type="VirtualBusLogicController">
+   <key>0</key>
+   <busNumber>0</busNumber>
+   <device>0</device>
+   <sharedBus>noSharing</sharedBus>
+  </device>
+</deviceChange>
+<deviceChange>
+  <operation>add</operation>
+  <fileOperation>create</fileOperation>
+  <device xsi:type="VirtualDisk">
+   <key>0</key>
+   <backing xsi:type="VirtualDiskFlatVer2BackingInfo">
+     <fileName>[ie-cw-esx01-local]TestVM_master/</fileName>
+     <diskMode>persistent</diskMode>
+     <thinProvisioned>1</thinProvisioned>
+   </backing>
+   <controllerKey>0</controllerKey>
+   <unitNumber>0</unitNumber>
+   <capacityInKB>5242880</capacityInKB>
+   </device>
+  </deviceChange>
+  <deviceChange>
+    <operation>add</operation>
+    <device xsi:type="VirtualPCNet32">
+      <key>1</key>
+      <backing xsi:type="VirtualEthernetCardNetworkBackingInfo">
+        <deviceName>VLAN204-OPS-Network</deviceName>
+        <network xsi:type="ManagedObjectReference" type="Network">HaNetwork-VLAN204-OPS-Network</network>
+      </backing>
+      <connectable>
+        <startConnected>1</startConnected>
+        <allowGuestControl>1</allowGuestControl>
+        <connected>0</connected>
+     </connectable>
+     <unitNumber>1</unitNumber>
+     <addressType>generated</addressType>
+    </device>
+  </deviceChange>
+<deviceChange>
+   <operation>add</operation>
+   <device xsi:type="VirtualCdrom">
+     <key>2</key>
+     <backing xsi:type="VirtualCdromPassthroughBackingInfo">
+       <deviceName>myCDROM</deviceName>
+       <exclusive>1</exclusive>
+     </backing>
+     <connectable>
+       <startConnected>0</startConnected>
+       <allowGuestControl>1</allowGuestControl>
+       <connected>0</connected>
+     </connectable>
+     <controllerKey>201</controllerKey>
+     <unitNumber>2</unitNumber>
+   </device>
+</deviceChange>
+</config>
+<pool type="ResourcePool">ha-root-pool</pool>
+</CreateVM_Task></soapenv:Body></soapenv:Envelope>

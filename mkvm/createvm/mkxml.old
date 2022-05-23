@@ -1,0 +1,24 @@
+echo '<?xml version="1.0"?>'
+echo '<Virtual-Machines>'
+IFS=,
+while read Name Host Datacenter GuestId NoDatastore dsize msize vcpu network rest
+do
+	test `echo $Name | grep -c '^#'` -gt 0 && continue
+	let Disksize=$dsize*1048576
+	let Memory=$msize*1024
+	Datastore=`mysql -N -B -e "select name from datastores where name like '%vsan%' and id in (select datastore_id from host_datastore where host_id in (select id from hosts where name = '$Host')) order by free desc limit 1"`
+	echo "  <Virtual-Machine>"
+	echo "    <Name>$Name</Name>"
+	echo "    <Host>$Host</Host>"
+	echo "    <Datacenter>$Datacenter</Datacenter>"
+	echo "    <Guest-Id>$GuestId</Guest-Id>"
+	echo "    <Datastore>$Datastore</Datastore>"
+	echo "    <Disksize>$Disksize</Disksize>"
+	echo "    <Memory>$Memory</Memory>"
+	echo "    <Number-of-Processor>$vcpu</Number-of-Processor>"
+	echo "    <Nic-Network>$network</Nic-Network>"
+	echo "    <Nic-Poweron>0</Nic-Poweron>"
+	echo "  </Virtual-Machine>"
+	break
+done < vminfo.dat
+echo '</Virtual-Machines>'

@@ -1,0 +1,55 @@
+#!/bin/bash
+pass=""
+#set -x
+while true
+do
+	case "$1" in
+	"-p")
+		shift
+		pass=$1
+		shift
+		;;
+	*)
+		break;;
+	esac
+done
+server="$1"
+shift
+cmd="$*"
+if test -z "$pass"; then
+	if test -z "$server"; then
+		echo "error: unable to determine destination server"
+		exit 1
+	fi
+	pass="$(/usr/local/bin/vim_cred -x -s "$server" -u root)"
+	if test -z "$pass"; then
+		echo "error: unable to get password for server $server"
+		exit 1
+	fi
+fi
+OPTS="-t -t -F /dev/null -o ConnectTimeout=5 -o StrictHostKeyChecking=no"
+expect << EOF
+spawn ssh $OPTS -l root $server
+sleep 2
+expect {
+	"(yes/no)? " {
+		send "yes\n"
+		sleep 1
+		exp_continue
+	}
+	"assword:" {
+		send "$pass\n"
+		expect {
+			"~ # " { }
+			":~] " { }
+		}
+	}
+}
+set timeout -1
+send "$cmd\n"
+sleep 1
+expect {
+	"~ # " { }
+	":~] " { }
+}
+EOF

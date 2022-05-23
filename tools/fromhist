@@ -1,0 +1,11 @@
+#!/bin/bash
+test -z "$1" && exit 1
+tmp=/tmp/fromhost.$$
+trap '{ rm -f $tmp; }' EXIT
+host "$1" > $tmp 2>&1
+h=`cat $tmp | awk '{ print $1 }'`
+if test "$h" = "Host"; then
+	cat $tmp
+	exit 1
+fi
+mysql --database=esxadmin --user=esxadmin_ro --pass= -N -B -e "SELECT * FROM vm_hist WHERE host_from like '$1%' ORDER BY TIME ASC"

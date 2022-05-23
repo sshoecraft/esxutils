@@ -1,0 +1,333 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use DBI;
+use CGI;
+#use File::Temp;
+use File::Temp qw/ :POSIX /;
+use XML::Simple qw(:strict);
+use VMware::VIRuntime;
+use Data::Dumper;
+use threads;
+
+my $username = 'root';
+my $password = 'k1n0bi!';
+my $sendto = 'stephen.shoecraft@mckesson.com MSHPlatformOperations@usoncology.com';
+my $tmp = tmpnam("vmopsXXXXX");
+my $log = "/var/tmp/vmops.log";
+
+# Version 1.3
+
+# Print the header before anything else
+my $q = new CGI;
+
+my $logfp;
+open($logfp, ">>", $log) or die("open log");
+
+my $debug = 9;
+sub dprintf { my $level = shift; if ($debug >= $level) { print "#"; printf(@_); } }
+sub dlprintf { my $level = shift; if ($debug >= $level) { printf($logfp @_); } }
+
+# Connect to DB
+my $dbh = DBI->connect("DBI:mysql:esxadmin:localhost",'esxadmin_ro') or die "Couldn't connect to database: " . DBI->errstr;
+my $vn = $dbh->prepare("SELECT name FROM vms WHERE name like ?");
+my $hid = $dbh->prepare("SELECT host_id FROM vms WHERE name = ? order by last_seen desc limit 1");
+my $chid = $dbh->prepare("SELECT host_id FROM vms WHERE ci_name = ?");
+my $host = $dbh->prepare("SELECT name FROM hosts WHERE id = ?");
+
+# Inputs
+my $hostname = $q->param('hostname');
+$hostname = "unknown" unless($hostname);
+my $action = $q->param('action');
+$action = "unknown" unless($action);
+my $args = $q->param('args');
+$args = "" unless($args);
+
+my $notify = 1;
+if ($ARGV[0]) {
+	$hostname = $ARGV[0];
+	$action = $ARGV[1] if ($ARGV[1]);
+	$args = $ARGV[2] if ($ARGV[2]);
+	$notify = 0;
+	$debug = 3;
+} else {
+	print $q->header();
+}
+
+#$hostname = "rh5-64.uson.usoncology.int"; $action="tools"; $args = "";
+#$hostname = "usodplvaf001.uprd.usoncology.unx"; $action="unmount"; $args = "";
+
+dprintf(1,"hostname: %s, action: %s, args: %s\n", $hostname, $action, $args);
+system("echo [`date +%Y%m%d%H%M`] '\$hostname=\"$hostname\";\$action=\"$action\";\$args=\"$args\";' >> $log 2>/dev/null");
+
+my ($shorthost,@my_domain) = split('\.',$hostname); my $domain = join('.',@my_domain);
+dprintf(1,"shorthost: %s, domain: %s\n", $shorthost, $domain);
+
+# Make sure we have the right name
+my (@data);
+my $namelike = $shorthost . '%';
+$vn->execute($namelike);
+dprintf(1,"vn->rows: %s\n", $vn->rows);
+if ($vn->rows == 1) {
+	@data = $vn->fetchrow;
+	$shorthost = $data[0];
+	dprintf(1,"NEW shorthost: %s\n", $shorthost);
+}
+
+# Get the VM host
+my ($host_id);
+$hid->execute($shorthost);
+dprintf(1,"hid->rows: %s\n", $hid->rows);
+if ($hid->rows) {
+	@data = $hid->fetchrow;
+	($host_id) = @data;
+} else {
+	$chid->execute($hostname);
+	if ($chid->rows) {
+		@data = $chid->fetchrow;
+		($host_id) = @data;
+	} else {
+		printf("Error: vm (%s) not found!\n", $hostname);
+		exit 1;
+	}
+}
+dprintf(1,"host_id: %d\n", $host_id);
+$host->execute($host_id);
+if (!$host->rows) {
+	printf("Error: host_id (%d) not found???\n", $host_id);
+	exit 1;
+}
+@data = $host->fetchrow;
+my ($vm_host) = @data;
+
+my $url = "https://$vm_host/sdk";
+dprintf(1,"url: %s\n", $url);
+
+# Get the VM
+Vim::login(service_url => $url, username => $username, password => $password);
+my $vms  = Vim::find_entity_views( view_type => 'VirtualMachine', filter => { 'name' => qr/$shorthost/i });
+dprintf(1,"count: %s\n", 0+@$vms);
+if (0+@$vms < 1) {
+	printf("Error: name (%s) not found in inventory!\n", $shorthost);
+	exit 1;
+}
+elsif (0+@$vms > 1) {
+	printf("Error: more than 1 of (%s) found in inventory!\n", $shorthost);
+	exit 1;
+}
+my ($vm) = @$vms;
+dprintf(1,"vm name: %s\n", $vm->name);
+
+# Do the operation
+my $func = "do_" . $action;
+dprintf(1,"calling function: %s\n", $func);
+funcs->$func($vm,$args);
+
+Vim::logout();
+unlink($tmp);
+exit 0;
+
+# ********************************************************************
+#
+# Funcs
+#
+# ********************************************************************
+
+package funcs;
+
+use VMware::VIRuntime;
+use Data::Dumper;
+
+sub dprintf { my $level = shift; if ($debug >= $level) { print "#"; printf(@_); } }
+
+sub _checkTask {
+	my ($task, $taskName) = @_;
+
+	dprintf(1,"task: %s\n", $task);
+	my $taskView = Vim::get_view(mo_ref => $task);
+	my $retries = 3;
+	while(!defined $taskView->{info}) {
+		$retries--;
+		if (!$retries) {
+			printf("Error: unable to get task info!\n");
+			return 0;
+		}
+		sleep(1);
+		$taskView->update_view_data();
+	}
+#	print Dumper($taskView);
+	dprintf(1,"state: %s\n", $taskView->info->state->val);
+	while($taskView->info->state->val eq "running") {
+		sleep 1;
+		$taskView->update_view_data();
+		dprintf(1,"state: %s\n", $taskView->info->state->val);
+	}
+	if ($taskView->info->state->val eq "success") {
+		return 0;
+	} else {
+		printf("Error: $taskName: $taskView->info->error->localizedMessage\n");
+	}
+	return 1;
+}
+
+sub check {
+	my ($name) = @_;
+
+	# Handle KILL signal
+	$SIG{'KILL'} = sub { threads->exit(); };
+	dprintf(1,"check: name: %s\n", $name);
+	while(1) {
+		my $vms  = Vim::find_entity_views( view_type => 'VirtualMachine', filter => { 'name' => qr/^$name$/i });
+		my ($vm) = @$vms;
+		dprintf(1,"check: vm name: %s\n", $vm->name);
+		if (defined($vm->runtime->question)) {
+			if (defined($vm->runtime->question->id)) {
+				$vm->AnswerVM(questionId => $vm->runtime->question->id, answerChoice => 0);
+			}
+		}
+		sleep 3;
+	}
+}
+
+sub stopTools {
+	my ($vm) = @_;
+
+	eval { $vm->UnmountToolsInstaller(); };
+	my $retries = 10;
+	while($retries) {
+		my $deviceList = $vm->config->hardware->device;
+		foreach my $device (@$deviceList) {
+			if (ref($device) eq "VirtualCdrom") {
+				dprintf(1,"connected: %s\n", $device->connectable->connected);
+				return 0 if (!$device->connectable->connected);
+			}
+		}
+		$retries--;
+		if ($retries) {
+			sleep(1);
+			$vm->update_view_data();
+		}
+	}
+	return 1;
+}
+
+sub _setcd {
+	my ( $vm, $device, $name ) = @_;
+	my ($backingInfo,$con);
+	dprintf(1,"namelen: %d\n", length($name));
+	if (length($name) > 0) {
+		$backingInfo = VirtualCdromIsoBackingInfo->new(fileName => $name);
+		$con = 'true';
+	} else {
+		$backingInfo = VirtualCdromRemoteAtapiBackingInfo->new(deviceName => '');
+		$con = 'false';
+	}
+	my $cdSpec = VirtualCdrom->new(
+		key => $device->key,
+		controllerKey => $device->controllerKey,
+		connectable => VirtualDeviceConnectInfo->new(
+			allowGuestControl => 'true',
+			connected => $con,
+			startConnected => $con,
+		),
+		backing => $backingInfo,
+	);
+	my $spec = VirtualMachineConfigSpec->new(
+		deviceChange => [
+			VirtualDeviceConfigSpec->new(
+				operation => VirtualDeviceConfigSpecOperation->new( "edit" ),
+				device => $cdSpec,
+			)
+		]);
+	eval { $vm->ReconfigVM(spec => $spec); };
+	if ($@) { print STDERR "Reason: " . $@->fault_string . "\n"; }
+	else { sleep(5); }
+#	my $task = $vm->ReconfigVM_Task(spec => $spec);
+#	_checkTask($task,"Reconfig") if ($task);
+}
+
+sub setcd {
+	my ($vm,$name) = @_;
+	my $deviceList = $vm->config->hardware->device;
+	foreach my $device (@$deviceList) {
+#		print ref($device) . "\n";
+		if (ref($device) eq "VirtualCdrom") {
+			_setcd($vm,$device,$name);
+			return 0;
+		}
+	}
+	# Not found
+	return 1;
+}
+
+sub do_tools {
+	my ($self,$vm,$args) = @_;
+	if (!$vm->runtime->toolsInstallerMounted) {
+		dprintf(1,"setting CD to null...\n");
+		setcd($vm,"");
+		dprintf(1,"mounting tools...\n");
+		$vm->MountToolsInstaller()
+	}
+}
+
+sub do_mount {
+	my ($self,$vm,$args) = @_;
+	dlprintf(1,"mountiso: args: %s\n", $args);
+	stopTools($vm) if ($vm->runtime->toolsInstallerMounted);
+	setcd($vm,$args);
+}
+
+sub do_unmount {
+	my ($self,$vm,$args) = @_;
+
+	$notify = 1 if ($args eq "notify");
+	dprintf(1,"do_unmount; notify: %d\n", $notify);
+	if ($notify) {
+		open(my $fh,">",$tmp);
+		printf($fh "From: SysAdmin <sysadm\@usoncology.com>\n");
+		printf($fh "Subject: Build complete for linux VM %s\n", $vm->name);
+		printf($fh "\n");
+		system("cat $tmp | /usr/sbin/sendmail $sendto");
+		close($fh);
+	}
+
+	main::dlprintf(1,"creating thread...\n");
+	my $thr = threads->create('check', $vm->name);
+	$thr->detach();
+	main::dlprintf(1,"vm->runtime->toolsInstallerMounted: %s\n", $vm->runtime->toolsInstallerMounted);
+	stopTools($vm) if ($vm->runtime->toolsInstallerMounted);
+	setcd($vm,"");
+	main::dlprintf(1,"killing threads...\n");
+	$thr->kill(9);
+	main::dlprintf(1,"done!\n");
+}
+
+sub do_umount {
+	$notify=0;
+	do_unmount(@_);
+}
+
+sub do_reboot {
+	my ($self,$vm,$args) = @_;
+	$vm->RebootGuest();
+}
+
+sub do_shutdown {
+	my ($self,$vm,$args) = @_;
+	$vm->ShutdownGuest();
+}
+
+sub do_reset {
+	my ($self,$vm,$args) = @_;
+	$vm->ResetVM();
+}
+
+sub do_poweroff {
+	my ($self,$vm,$args) = @_;
+	$vm->PowerOffVM();
+}
+
+sub do_poweron {
+	my ($self,$vm,$args) = @_;
+	$vm->PowerOnVM();
+}

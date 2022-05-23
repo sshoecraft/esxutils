@@ -1,0 +1,10 @@
+#XXX Get a new build number file from: https://kb.vmware.com/s/article/2143832
+#XXX copy & paste into excell, delete the date & component columns (just keep label & build number) & save as csv
+mysql < 1_esx_build_name.sql
+sed -i -e 's: ,:,:g' vmware_build_numbers.csv
+cat vmware_build_numbers.csv | sort -t, -k2 -u > import_build_numbers.csv
+mysql -e "load data local infile 'import_build_numbers.csv' into table esx_build_name fields terminated by ',' enclosed by '\"' lines terminated by '\n' (name,build);"
+mysql -N -B -e "select count(*) from esx_build_name";
+rm -f import_build_numbers.csv
+#
+mysql -e "insert into esx_build_name values (348481,'ESXi 4.1 Update 1');"

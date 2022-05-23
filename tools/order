@@ -1,0 +1,6 @@
+connect to vc
+for host, find dvs name(s)
+collect dvs info for name(s)
+create vswitch0 with pgs
+move vmnic1 to vSwitch0
+change vms to pgs

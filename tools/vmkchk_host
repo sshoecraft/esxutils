@@ -1,0 +1,82 @@
+#!/bin/bash
+
+let verbose=0
+let debug=0
+
+lib=/usr/local/lib/tools
+test `echo $0 | awk '{ print substr($0,0,2) }'`  = "./" && lib=./
+test $debug -gt 0 && echo "lib: $lib"
+
+SCRIPT=test_vmknics
+ADMSCP=/usr/local/lib/tools/admscp
+ADMSSH=/usr/local/lib/tools/admssh
+
+argc=$(($# - 1))
+test $verbose -gt 0 && echo "argc: $argc, args: $*"
+test -z "$1" && exit 1
+test -f $1 || exit 1
+test -z "$2" && exit 1
+HOST=$2
+
+if test `/usr/local/bin/esxconf -a -s $HOST | grep name | grep -c -i ESXi` -gt 0; then
+	SUDO=""
+	let esxi=1
+	/usr/local/bin/esxshell start $HOST > /dev/null 2>&1
+else
+	SUDO="sudo"
+	let esxi=0
+fi
+
+# Get the ips
+ips=""
+let c=0
+while read ip
+do
+	ips="$ips $ip"
+	let c=$c+1
+done < $1
+let count=$c
+test $verbose -gt 0 && echo "host: $HOST, count: $count, ips: $ips"
+
+# Copy the file
+/usr/local/bin/esxshell start $HOST
+/usr/local/lib/tools/esxcmd $HOST "rm -f /tmp/$SCRIPT" > /dev/null 2>&1
+/usr/local/lib/tools/esxscp $lib/$SCRIPT $HOST:/tmp > /dev/null 2>&1
+#/usr/local/bin/timeout 120 $ADMSSH $HOST "$SUDO rm -f /tmp/$file /tmp/$SCRIPT" > /dev/null 2>&1
+#/usr/local/bin/timeout 600 $ADMSCP $lib/$SCRIPT $HOST:/tmp > /dev/null 2>&1
+status=$?
+#status=1
+test $verbose -gt 0 && echo "status: $status"
+if test $status -ne 0; then
+	let c=0
+	results=""
+	while test $c -lt $count
+	do
+		test $c -gt 0 && results="$results,"
+		results="$results"2
+		let c=$c+1
+	done
+else
+	if test $esxi -gt 0; then
+#		r=`/usr/local/bin/timeout 300 $ADMSSH $HOST "chmod +x /tmp/$SCRIPT; sh /tmp/$SCRIPT $ips; rm -f /tmp/$SCRIPT"`
+		tmp=/tmp/vmkchk_host.results.$$
+		/usr/local/lib/tools/esxcmd $HOST "sh /tmp/$SCRIPT $ips" > $tmp 2>&1
+		touch $tmp
+		r=`cat $tmp | grep ^results:`
+		rm -f $tmp
+	else
+#		r=`/usr/local/bin/timeout 300 $ADMSSH $HOST "sudo su - root -c \"chmod +x /tmp/$SCRIPT; sh /tmp/$SCRIPT $ips; rm -f /tmp/$SCRIPT\""`
+		echo "not esxi?"
+	fi
+	test $debug -gt 0 && echo "r: $r"
+	results=`echo $r | tr -d '\n\r' | grep ^results: | awk '{ print $2 }'`
+	test $debug -gt 0 && echo "results: $results"
+fi
+echo "$results" > /tmp/vmkchk_$HOST.dat
+#/usr/local/bin/esxshell stop $HOST
+
+if test $esxi -gt 0; then
+#	/usr/local/bin/esxshell stop $HOST > /dev/null 2>&1
+	stty sane icrnl ixon opost isig icanon iexten echo > /dev/null 2>&1
+fi
+exit 0

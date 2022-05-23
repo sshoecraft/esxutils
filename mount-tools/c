@@ -1,0 +1,7 @@
+mount /dev/cdrom /mnt
+cd /tmp || exit 1
+tar -zxf /mnt/VMwareTools-8.3.12-559003.tar.gz
+cd vmware-tools-distrib
+./vmware-install.pl -d
+cd ..
+rm -rf vmware-*

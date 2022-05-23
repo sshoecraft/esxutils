@@ -1,0 +1,4 @@
+make clean
+make DEBUG=yes all install
+make clean
+make DEBUG=no all install

@@ -1,0 +1,29 @@
+#!/bin/bash
+# SuSE 10
+if test -x /etc/init.d/ntp; then
+	name="ntp"
+else
+	# SuSE 9
+	if test -x /etc/init.d/xntpd; then
+		name="xntpd"
+	else
+		if test -x /etc/init.d/ntpd; then
+			name="ntpd"
+		else
+			echo "unable to find NTP script!"
+		fi
+	fi
+fi
+if test -n "$name"; then
+	test -x /sbin/chkconfig && /sbin/chkconfig $name on > /dev/null 2>&1
+	/etc/init.d/$name stop
+	/etc/init.d/$name start
+fi
+if test -x /usr/sbin/vmtoolsd; then
+	/usr/sbin/vmtoolsd --cmd "vmx.set_option synctime 1 0" > /dev/null 2>&1
+else
+	if test -x /usr/sbin/vmware-guestd; then
+		/usr/sbin/vmware-guestd --cmd "vmx.set_option synctime 1 0" > /dev/null 2>&1
+	fi
+fi
+exit 0

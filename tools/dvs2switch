@@ -1,0 +1,23 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+use lib qw (/usr/local/lib/perl);
+use utils;
+
+$debug = 9;
+
+my $host = "usonplpvm008";
+my $user = "root";
+my $pass = "k1n0bi!";
+
+#collect port group info
+sub collect { 
+	my $dvSwitches = Vim::find_entity_views(view_type => 'DistributedVirtualSwitch');
+}
+
+#remove vmnic1 from dvs
+#create vswitch0 using vmnic1
+#create port groups (vswitch0-vlan-XXX)
+#for each vm: change to vswitch0-vlan-XXX for every nic
+collect;

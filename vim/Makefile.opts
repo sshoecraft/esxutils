@@ -1,0 +1,3 @@
+#DEBUG=yes
+SOAP=yes
+UTIL=yes

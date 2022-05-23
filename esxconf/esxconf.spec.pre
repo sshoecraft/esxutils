@@ -1,0 +1,12 @@
+Summary: esxconf
+Name: esxconf
+Version: 1
+Release: 0
+License: MSH
+Group: Applications/System
+BuildArch: x86_64
+
+%description
+A VMware vCenter/ESX host configuration reporting utility
+
+%files

@@ -1,0 +1,70 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use DBI;
+
+my $debug = 0;
+sub dprintf { my $level = shift; printf(@_) if ($debug >= $level); }
+
+my $ESXADMIN_SERVER = "tools.uprd.usoncology.unx";
+
+my $dbh = DBI->connect("DBI:mysql:esxadmin:$ESXADMIN_SERVER",'esxadmin_ro') or die "Couldn't connect to database: " . DBI->errstr;
+my $vms = $dbh->prepare("SELECT host_id FROM vms where name like ?");
+my $hosts = $dbh->prepare("SELECT farm_id,name FROM hosts where id = ?");
+my $hostsbyname = $dbh->prepare("SELECT farm_id,name FROM hosts where name like ?");
+my $farms = $dbh->prepare("SELECT server,name FROM farms where id = ?");
+my $farmsbyname = $dbh->prepare("SELECT server,name FROM farms where name like ?");
+
+my (@rec,$host_id,$farm_id,$host,$vcserver,$farm);
+
+my $is_farm = 0;
+my $is_host = 0;
+
+if ($#ARGV < 0) {
+	print "usage: whichvc <vm name>\n";
+	exit 1;
+}
+my $arg = $ARGV[0];
+$vms->execute($arg . '%');
+if (!$vms->rows) {
+	$hostsbyname->execute($arg . '%');
+	if (!$hostsbyname->rows) {
+		$farmsbyname->execute($arg . '%');
+		if (!$farmsbyname->rows) {
+			printf("argument must be a farm/host/vm\n");
+			exit 1;
+		} else {
+			@rec = $farmsbyname->fetchrow;
+			$is_farm = 1;
+		}
+	} else {
+		@rec = $hostsbyname->fetchrow;
+		$is_host = 1;
+	}
+}
+if (!$is_farm) {
+	if (!$is_host) {
+		@rec = $vms->fetchrow;
+		($host_id) = @rec;
+		#printf("host_id: %d\n", $host_id);
+
+		$hosts->execute($host_id);
+		if (!$hosts->rows) {
+			printf("Host ID %d not found\n");
+			exit 1;
+		}
+		@rec = $hosts->fetchrow;
+	}
+	($farm_id,$host) = @rec;
+	#printf("host: %s, farm_id: %d\n", $host, $farm_id);
+
+	$farms->execute($farm_id);
+	if (!$farms->rows) {
+		printf("Farm ID %d not found\n", $farm_id);
+		exit 1;
+	}
+	@rec = $farms->fetchrow;
+}
+($vcserver,$farm) = @rec;
+#printf("server: %s, farm: %s\n", $vcserver, $farm);
+printf("%s\n", $vcserver);

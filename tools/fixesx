@@ -1,0 +1,20 @@
+#!/bin/bash
+#
+TOOLS=/usr/local/lib/tools
+SCRIPT=doesxfix
+#
+if test -z "$1"; then
+	echo "fixesx <host>"
+	exit 1
+fi
+#
+#scp -B -o ConnectTimeout=10 $TOOLS/$SCRIPT $1:/tmp > /dev/null 2>&1
+$TOOLS/admscp $TOOLS/$SCRIPT $1:/tmp > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+        echo "down(connect): $1"
+        exit 1
+fi
+/usr/local/bin/timeout 120 $TOOLS/admssh $1 \
+	"nohup sudo bash -c \"chmod 755 /tmp/$SCRIPT; /tmp/$SCRIPT; rm -f /tmp/$SCRIPT\" | tee /dev/null"
+
+/usr/local/sbin/esxpost -c $1 > /dev/null 2>&1

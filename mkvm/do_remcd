@@ -1,0 +1,2 @@
+#!/bin/bash
+./remcd.pl --server $1 --username root --password k1n0bi!

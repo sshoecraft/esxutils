@@ -1,0 +1,198 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use File::Temp;
+use XML::Simple qw(:strict);
+use Data::Dumper;
+use IO::File;
+
+my $debug = 0;
+sub dprintf { my $level = shift; if ($debug >= $level) { print "#"; printf(@_); } }
+
+my $host = $ARGV[0];
+unless($host) {
+        printf("usage: %s <hostname>\n",$0);
+        exit 1;
+}
+
+#my $fh = IO::File->new("x");
+my $cmd = "/usr/local/bin/esxconf -x -s $host config.network config.virtualNicManagerInfo 2>/dev/null |";
+dprintf(1,"cmd: %s\n", $cmd);
+my $fh = IO::File->new($cmd);
+dprintf(1,"fh: $fh\n");
+my $data = do { local $/ = <$fh> };
+dprintf(3,"data: $data\n");
+$fh->close;
+if (length($data) < 1) {
+	printf("error: no data from: $host\n");
+	exit 1;
+}
+
+dprintf(1,"Reading XML data...\n");
+my $config = XMLin($data, KeyAttr => [ ], forcearray => [ ]);
+dprintf(1,"config: $config\n");
+unless($config) {
+	printf("error: unable to parse XML config!\n");
+	exit 1;
+}
+#print Dumper($config);
+my $conf = $config->{ManagedObject}->{config};
+$config = shift(@$conf);
+my $vnics = shift(@$conf);
+my %interfaces;
+
+my $level = 0;
+
+sub indent {
+	for(my $i=0; $i < $level; $i++) { print '  '; }
+}
+
+sub begintag($) {
+	my ($tag) = @_;
+
+	indent();
+	printf("<$tag>\n");
+	$level++;
+}
+
+sub endtag($) {
+	my ($tag) = @_;
+
+	$level--;
+	indent();
+	printf("</$tag>\n");
+}
+
+sub tagval($$) {
+	my ($tag,$val) = @_;
+
+	return 1 unless($val);
+	$val = "undef" unless($val);
+	indent();
+	printf("<$tag>$val</$tag>\n");
+	return 0;
+}
+
+sub getnics($) {
+	my ($list) = @_;
+
+	return "" unless($list);
+	$list = [ $list ] if ref($list) ne 'ARRAY'; 
+	my $nics = "";
+	foreach my $nic (@$list) {
+		$nic =~ s/^vmnic//;
+		dprintf(1,"nic: %s\n", $nic);
+		$nics .= "," if (length($nics) > 0);
+		$nics .= $nic;
+	}
+	return $nics;
+}
+
+sub dispvnic($) {
+	my ($pgname) = @_;
+
+	my %ifs;
+
+	dprintf(1,"pgname: %s\n", $pgname);
+	foreach my $vnic (@{$vnics->{virtualNicManagerInfo}->{netConfig}}) {
+#		print Dumper($vnic);
+		next if (($vnic->{nicType} ne "management") and ($vnic->{nicType} ne "vmotion"));
+		my $keys = $vnic->{selectedVnic};
+		$keys = [ $keys ] if ref($keys) ne 'ARRAY'; 
+		foreach my $key (@$keys) {
+			next unless ($key);
+#			$key = '' unless($key);
+			dprintf(1,"key: %s\n", $key);
+			my $cnics = $vnic->{candidateVnic};
+			$cnics = [ $cnics ] if ref($cnics) ne 'ARRAY';
+			foreach my $cnic (@{$cnics}) {
+#				print Dumper($cnic);
+				dprintf(1,"cpg: %s, key: %s\n", $cnic->{portgroup}, $cnic->{key});
+#         'candidateVnic' => [ { 'spec' => { 'portgroup' => 'iSCSI1',
+
+				if (($cnic->{key} eq $key) and ($cnic->{portgroup} eq $pgname)) {
+					my @data;
+					push @data,"vmotion,true" if ($vnic->{nicType} eq "vmotion");
+					if ($cnic->{spec}->{ip}->{dhcp} eq "true") {
+						push @data,"type,dhcp" ;
+					} else {
+						push @data,"ip," . $cnic->{spec}->{ip}->{ipAddress};
+						push @data,"netmask," . $cnic->{spec}->{ip}->{subnetMask};
+					}
+					my $mtu = $cnic->{spec}->{mtu};
+					$mtu = "1500" unless($mtu);
+					push @data,"mtu," . $mtu;
+					$ifs{$cnic->{device}} = [ @data ];
+				}
+			}
+		}
+	}
+	foreach my $key (sort(keys %ifs)) {
+		next unless ($key);
+		dprintf(1,"key: %s\n", $key);
+		begintag("interface");
+		tagval("name",$key);
+		foreach my $info (@{$ifs{$key}}) {
+			my @data = split(',',$info);
+			tagval($data[0],$data[1]);
+		}
+		endtag("interface");
+	}
+}
+
+sub dispg($) {
+	my ($key) = @_;
+
+	dprintf(1,"key: %s\n",$key);
+	my $i = 0;
+	foreach my $pg (@{$config->{network}->{portgroup}}) {
+#		print Dumper($pg);
+		if ($pg->{key} eq $key) {
+			dprintf(1,"matched\n");
+			begintag("portgroup");
+			my $pgname = $pg->{spec}->{name};
+			tagval("name",$pgname);
+			my $vlan = $pg->{spec}->{vlanId};
+			$vlan = "0" unless($vlan);
+			tagval("vlan",$vlan) if ($vlan ne "0");
+			my $active = getnics($pg->{spec}->{policy}->{nicTeaming}->{nicOrder}->{activeNic});
+			tagval("active",$active) if (length($active) > 0);
+			my $standby = getnics($pg->{spec}->{policy}->{nicTeaming}->{nicOrder}->{standbyNic});
+			tagval("standby",$standby) if (length($standby) > 0);
+#			dispvnic($pgname) if ($pgname ne "Management Network");
+			dispvnic($pgname);
+			endtag("portgroup");
+			# so we dont go over it again
+			splice(@{$config->{network}->{portgroup}},$i,1);
+		}
+		$i++;
+	}
+	return undef;
+}
+
+begintag("config");
+begintag("network");
+my $vswitches = $config->{network}->{vswitch};
+$vswitches = [ $vswitches ] if ref($vswitches) ne 'ARRAY'; 
+foreach my $vswitch (@$vswitches) {
+#	print Dumper($vswitch);
+	next unless($vswitch->{name});
+	begintag("vswitch");
+	tagval("name",$vswitch->{name});
+	my $nics = getnics($vswitch->{spec}->{policy}->{nicTeaming}->{nicOrder}->{activeNic});
+	tagval("uplinks",$nics) if (length($nics) > 0);
+	tagval("ports",$vswitch->{numPorts});
+	my $mtu = $vswitch->{mtu};
+	$mtu = "1500" unless($mtu);
+	tagval("mtu",$mtu) if ($mtu ne "1500");
+
+	my $pgkeys = $vswitch->{portgroup};
+	$pgkeys = [ $pgkeys ] if ref($pgkeys) ne 'ARRAY';
+	foreach my $pgkey (@$pgkeys) {
+		dispg($pgkey);
+	}
+
+	endtag("vswitch");
+}
+endtag("network");
+endtag("config");

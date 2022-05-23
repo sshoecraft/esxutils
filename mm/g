@@ -1,0 +1,3 @@
+make
+rm *.log
+./ismm -s westvc.houston.hp.com -u americas\\shoecraf d9t0068h.houston.hp.com

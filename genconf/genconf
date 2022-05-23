@@ -1,0 +1,2315 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use CGI;
+use File::Temp;
+use XML::Simple qw(:strict);
+use Data::Dumper;
+use Socket;
+use MIME::Base64;
+
+my $genconf_version="1.15";
+
+# Changelog:
+# 1.09  Added -i option to esxpost (for hosts with no DNS record yet)
+# 1.10  Added DC field to confmap (had to update confmap to prepend)
+# 1.11  Adding beta merge capability (for all.xml) added noall config opt
+# 1.12 9/22/20 moved dns/ntp/domain to config files
+# 1.13 9/23/20 moved waystations to config files
+# 1.14 10/29/20 added setway command
+# 1.15 05/03/22 added config change for vm console copy/paste
+
+# Print the header before anything else
+my $q = new CGI;
+print $q->header();
+
+my $debug = 0;
+#sub dprintf { my $level = shift; if ($debug >= $level) { print "#"; printf(@_); } }
+sub dprintf { my $level = shift; if ($debug >= $level) { foreach (@_) { $_ = '0' unless $_; } print "#"; printf(@_); } }
+
+# Vars
+my $quiet = 0;
+my $state = 0;
+my $in_state = 0;
+my $in_step = 0;
+my $level = 2;
+my $wipe_net = 0;
+my $log = "/var/tmp/genconf.log";
+my $tmpfile = mktemp("/tmp/genXXXXX");
+my $esxadmin_home = qx{getent passwd esxadmin | awk -F: '{ print \$6 }'};
+chomp($esxadmin_home);
+$esxadmin_home = "~" unless($esxadmin_home);
+dprintf(3,"esxadmin_home: %s\n", $esxadmin_home);
+my $LIBDIR = $esxadmin_home . "/etc/genconf";
+#$LIBDIR="." if ($0 =~ m/^[\.]/);
+dprintf(3,"LIBDIR: %s\n", $LIBDIR);
+my $confmap = "$LIBDIR/confmap";
+my $waystations = "$LIBDIR/waystations";
+my $cmd;
+my $emitlog = "\$log";
+my $version_val = 0;
+my $makeflag = "+++MAKEVOLS+++";
+my %options;
+my %states;
+
+# Defaults
+my $NUMPORTS = 512;
+my $use_prefix = "172.31";
+my $patchpath = "/vmfs/volumes/\$shortway-iso*/VMware/patches";
+my $vibpath = "/vmfs/volumes/\$shortway-iso*/VMware/vibs";
+
+# Inputs
+my $hostname = $q->param('hostname');
+$hostname = "unknown" unless($hostname);
+my $ip = $q->param('ip');
+$ip = "" unless($ip);
+my $os = $q->param('os');
+$os = "unknown" unless($os);
+my $version = $q->param('version');
+$version = "0.0.0" unless($version);
+my $build = $q->param('build');
+$build = "0" unless($build);
+my $model = $q->param('model');
+$model = "unknown" unless($model);
+my $client_args = $q->param('args');
+$client_args = "" unless($client_args);
+
+#$hostname="usodplpvm119.uprd.usoncology.unx";$ip="10.5.200.119";$os="ESXi";$version="6.7.0";$build="14320388";$model="ProLiant BL460c Gen9";
+$hostname="ddc1-pod2esx126.dm.mckesson.com";$ip="10.16.128.120";$os="ESXi";$version="6.5.0";$build="15256549";$model="PowerEdge R630";
+if ($hostname eq "unknown") {
+	printf("error: hostname not specified!\n");
+	exit 1;
+}
+dprintf(1,"client_args: %s\n", $client_args);
+my $decoded_args = decode_base64($client_args);
+dprintf(1,"decoded_args: %s\n", $decoded_args);
+my @args = split(' ',$decoded_args);
+for(my $i = 0; $i < scalar(@args); $i++) {
+	dprintf(1,"args[%d]: %s\n", $i, $args[$i]);
+}
+foreach(@args) {
+	$wipe_net = 1 if ($_ eq "wipe_net");
+}
+dprintf(1,"wipe_net: %s\n", $wipe_net);
+
+my ($shorthost,@my_domain) = split('\.',$hostname); my $domain = join('.',@my_domain);
+dprintf(1,"hostname: %s, os: %s, vers: %s, build: %s, model: %s\n", $hostname, $os, $version, $build, $model);
+system("echo [`date +%Y%m%d%H%M`] '\$hostname=\"$hostname\";\$ip=\"$ip\";\$os=\"$os\";\$version=\"$version\";\$build=\"$build\";\$model=\"$model\";' >> $log 2>/dev/null");
+
+$version_val = funcs::verval($version);
+#dprintf(1,"version_val: %x\n", $version_val);
+
+my $site;
+if ($hostname =~ /[d|g][0-9]t/) {
+	$site = substr($hostname,1,1);
+} elsif ($hostname =~ /s[0-9][0-9]t/) {
+	$site = substr($hostname,1,2);
+} else {
+	$site = 99;
+}
+dprintf(3,"site: %s\n", $site);
+
+my ($bindir,$flagdir,$statedir,$logdir,$tmpdir);
+$flagdir = "/var/tmp";
+$tmpdir = "/tmp";
+if ($os eq "ESXi") {
+	$bindir = $statedir = $logdir = "/scratch";
+} else {
+	$bindir = "/root";
+	$statedir = "/var/db";
+	$logdir = "/var/log";
+}
+dprintf(1,"bindir: %s, statedir: %s, logdir: %s\n", $bindir, $statedir, $logdir);
+
+# Get all the info from esxpost
+my $doip="-i \"$ip\"" if (length($ip) > 1);
+$doip = "" unless($doip);
+my $info;
+if (1 == 1) {
+	$cmd = "/usr/local/sbin/esxpost -v $version -g $hostname $doip 2>/dev/null";
+	dprintf(1,"cmd: %s\n", $cmd);
+	$info = qx{$cmd};
+#	$info = read_file("/tmp/esxpost.$$");
+#	$info = `cat /tmp/esxpost.$$`;
+	chomp($info);
+	$info = "" unless($info);
+} else {
+	$info = "INFO: usodplvvc001.uprd.usoncology.unx,DDC,DDC-SERVERS,XM22N-6YZDL-N8R80-0GX06-1M821,10.5.200.119,10.5.200.0,10.5.200.254,NG1"
+}
+dprintf(1,"info: %s\n", $info);
+$info = "" if ($info =~ /not found/);
+if ($info =~ m/^INFO: /) {
+	$info =~ s/^INFO: //;
+	dprintf(1,"NEW info: %s\n", $info);
+} else {
+	$info = "error: esxpost returned no info!" if (!length($info));
+	$level = 0;
+	$options{do_logging} = 1;
+	funcs->do_header;
+	printf("logit Fail \"%s\" >> \$log 2>&1\n", $info);
+	printf("rm -f \$flag_file\n");
+	exit 1;
+}
+# vcserver,dc,cluster,license,addr,subnet,gw,gen
+my ($vcserver,$dc,$cluster,$license,$hostip,$hostmask,$gateway,$gen) = split(",",$info);
+dprintf(1,"vcserver: %s, dc: %s, cluster: %s, license: %s, hostip: %s, hostmask: %s, gateway: %s, gen: %s\n", $vcserver, $dc, $cluster, $license, $hostip, $hostmask, $gateway, $gen);
+
+my $filename = "";
+my $hostconf = $shorthost . ".xml";
+if (-e "$LIBDIR/$hostconf") {
+	$filename = $hostconf;
+} else {
+	# Get the config from the confmap
+	open(CONF,"$confmap") or die("#error: unable to open $confmap");
+	while(my $buf = <CONF>) {
+		next if ($buf =~ /^#/);
+		chomp($buf);
+		next unless ($buf);
+		#DC,Cluster,Host,Version,Build,Model,File
+		my @fields = split(',',$buf);
+		foreach my $field (@fields) {$field = '.*' if (!length($field))};
+		my ($dexp,$cexp,$hexp,$vexp,$bexp,$mexp,$gexp,$file) = @fields;
+		dprintf(3,"fields: %s\n", "@fields");
+		next if ($dc !~ /$dexp/);
+		dprintf(2,"dc matched.\n");
+		next if ($cluster !~ /$cexp/);
+		dprintf(2,"cluster matched.\n");
+		next if ($hostname !~ /$hexp/);
+		dprintf(2,"host matched\n");
+		next if ($version !~ /$vexp/);
+		dprintf(2,"version matched\n");
+		next if ($build !~ /$bexp/);
+		dprintf(2,"build matched\n");
+		next if ($model !~ /$mexp/);
+		dprintf(2,"model matched\n");
+		next if ($gen !~ /$gexp/);
+		dprintf(2,"gen matched\n");
+		$filename = $file;
+		last;
+	}
+	close(CONF);
+	dprintf(1,"filename: %s\n", $filename);
+
+	# Get MOD
+	my @tmp = split(' ',$model);
+	my $have_match = 0;
+	my $modstr = "";
+	for(my $index = 0; defined($tmp[$index]); $index++) {
+		my $str = $tmp[$index];
+		dprintf(2,"[%d]: %s\n", $index, $str);
+		$have_match = 1 if ($str =~ m/(BL|DL|RX|SD)/i);
+		$modstr .= $str if ($have_match);
+	}
+	if (!$have_match) {
+		my $count = @tmp;
+		my $half = (sprintf "%.0f", $count/2)-1; 
+		$half = 0 if ($half < 0);
+		dprintf(2,"count: %s, half: %s\n", $count, $half);
+		$modstr .= $tmp[$half];
+	}
+	dprintf(1,"modstr: $modstr\n");
+
+	# Try to determine filename automatically
+	if (!length($filename)) {
+		$filename = $modstr; 
+		$filename .= "-$version";
+		$filename =~ s/\.0$//;
+		$filename .= "-$gen" if (length($gen) > 0);
+		$filename .= ".xml";
+		dprintf(1,"NEW filename: %s\n", $filename);
+	}
+}
+#exit 0;
+
+if ( -z "$filename") {
+	# XXX should we load a "default" config @ this point?
+	printf("error: unable to determine config filename!\n");
+	exit 1;
+}
+
+# Get build name
+my $build_name = `mysql --database=esxadmin --user=esxadmin_ro --password= -N -B -e "select name from esx_build_name where build = $build" 2>/dev/null`;
+chomp($build_name);
+$build_name = "" if ($build_name eq "Unknown");
+if (length($build_name) > 0) {
+	#$build_name = "UNK" if (!length($build_name));
+	$build_name =~ s/Update /U/;
+	$build_name =~ s/Patch /P/;
+	dprintf(1,"build_name: %s\n", $build_name);
+	my @tmp = split(' ',$build_name);
+	my $count = @tmp;
+	$build_name = $tmp[$count-1];
+	dprintf(1,"build_name: %s\n", $build_name);
+}
+
+# Get waystation
+my $waystation = "";
+my $way_ip = "";
+open(IN,"$waystations") or die("#error: unable to open waystations");
+while(my $buf = <IN>) {
+	next if ($buf =~ /^#/);
+	chomp($buf);
+	next unless ($buf);
+	#DC,Cluster,Host,Waystation,IP
+	my @fields = split(',',$buf);
+	foreach my $field (@fields) {$field = '.*' if (!length($field))};
+	my ($dexp,$cexp,$hexp,$fway,$fwip) = @fields;
+	dprintf(3,"fields: %s\n", "@fields");
+	next if ($dc !~ /$dexp/);
+	dprintf(2,"dc matched.\n");
+	next if ($cluster !~ /$cexp/);
+	dprintf(2,"cluster matched.\n");
+	next if ($hostname !~ /$hexp/);
+	dprintf(2,"host matched\n");
+	$waystation = $fway;
+	$way_ip = $fwip;
+	last;
+}
+close(IN);
+dprintf(1,"waystation: %s, ip: %s\n", $waystation, $way_ip);
+#exit(0);
+
+# Get name subkey from array
+sub _getname {
+	my ( $var ) = @_;
+	for my $idx ( 0 .. $#$var ) {
+#		dprintf(3,"var->[%d]: %s\n", $idx, $var->[$idx]);
+		if (ref $var->[$idx] eq "HASH") {
+			my $h = $var->[$idx];
+			for my $key ( keys %$h ) {
+#				dprintf(3,"key: %s\n", $key);
+				if ($key eq "name") {
+					dprintf(3,"_getname: returning: %s\n", $h->{$key});
+					return $h->{$key};
+				}
+			}
+		}
+	}
+	return undef;
+}
+
+# Find array entry that has subentry of name
+sub _findit {
+	my ( $var, $name ) = @_;
+	dprintf(3,"findit: name: %s\n", $name);
+	for my $idx ( 0 .. $#$var ) {
+#		dprintf(3,"var->[%d]: %s\n", $idx, $var->[$idx]);
+		if (ref $var->[$idx] eq "HASH") {
+			my $h = $var->[$idx];
+			for my $key ( keys %$h ) {
+#				dprintf(3,"key: %s\n", $key);
+				if ($key eq "name") {
+					if ($h->{$key} eq $name) {
+						dprintf(3,"_findit: returning: %d\n", $idx);
+						return $idx;
+					}
+					last;
+				}
+			}
+		}
+	}
+	return -1;
+}
+
+# Merge V2 into V1
+sub merge {
+	my ( $v1, $v2, $name ) = @_;
+	dprintf(3,"************* DOIT ****************\n");
+#	print Dumper($v1);
+#	print Dumper($v2);
+	dprintf(3,"**************** ****************\n");
+	my $t1 = ref $v1;
+	my $t2 = ref $v2;
+	dprintf(3,"t1: %s, t2: %s\n", $t1, $t2);
+	if ($t1 ne $t2) {
+		dprintf(3,"error: t1 not same ref as t2!!!\n");
+		return;
+	}
+	dprintf(3,"name: %s\n", $name);
+	if ($t2 eq "HASH") {
+		for my $key ( keys %$v2 ) {
+			dprintf(3,"key: %s\n", $key);
+			unless($v1->{$key}) {
+				dprintf(3,"copying v2 -> v1\n");
+				$v1->{$key} = $v2->{$key};
+			} else {
+				merge($v1->{$key}, $v2->{$key}, $key);
+			}
+		}
+	} elsif ($t2 eq "ARRAY") {
+		if ($name eq "vswitch" || $name eq "portgroup" || $name eq "interface" || $name eq "option") {
+			# Look for name
+			my $v2name = _getname($v2);
+			$v2name = "vSwitch0";
+			dprintf(3,"v2name: %s\n", $v2name);
+			# Find correspondiing v1 entry
+			my $v1ent = _findit($v1,$v2name);
+			dprintf(3,"v1ent: %d\n", $v1ent);
+			if ($v1ent == -1) {
+				push(@$v1,@$v2);
+#				print Dumper($v1);
+#				exit(0);
+			}
+		}
+if (0) {
+		for my $idx ( 0 .. $#$v2 ) {
+			dprintf(3,"idx: %d\n", $idx);
+			my $v1ref = ref $v1->[$idx];
+			dprintf(3,"v1ref: %s\n", $v1ref);
+			unless($v1ref) {
+				dprintf(3,"copying v2 -> v1\n");
+				$v1->[$idx] = $v2->[$idx];
+#			} else {
+#				merge($v1->[$idx],$v2->[$idx]);
+			}
+		}
+}
+	} elsif ($t2 eq "SCALAR") {
+		dprintf(3,"uhhh ... what?\n");
+	} else  {
+		dprintf(3,"unknown type: %s\n", $t2);
+	}
+}
+
+# Load the config
+my $config = undef;
+my $infile = "$LIBDIR/$filename";
+$options{do_mkvols} = 1;
+if ( -f "$infile" ) {
+	my @forced = [ 'include','dns','domain','ntp','vswitch','portgroup','interface','option','nas','iscsi' ];
+	dprintf(1,"config file: %s\n",$infile);
+	$config = XMLin($infile, KeyAttr => [ ], forcearray => @forced);
+	if ($config->{include}) {
+		for my $incs ($config->{include}) {
+			dprintf(1,"incs: %s\n", ref $incs);
+			for my $inc (@$incs) {
+				my $inc_file = "$LIBDIR/" . $inc;
+				dprintf(1,"inc_file: %s\n", $inc_file);
+				my $inc_config = XMLin($inc_file, KeyAttr => [ ], forcearray => @forced);
+				merge($config,$inc_config,"");
+			}
+		}
+	}
+	if (!$config->{noall}) {
+		dprintf(1,"loading all.xml\n");
+		my $all_file = "$LIBDIR/all.xml";
+		my $all_config = XMLin($all_file, KeyAttr => [ ], forcearray => @forced);
+		dprintf(1,"back from XMLin...\n");
+		merge($config,$all_config,"");
+#		print Dumper($config);
+	}
+} else {
+	$level = 0;
+	$options{do_logging} = 1;
+	funcs->do_header;
+	printf("logit Fail \"unable to load config from file: %s\" >> \$log 2>&1\n",$infile);
+	printf("rm -f \$flag_file\n");
+	exit 1;
+}
+#print Dumper($config);
+#exit(0);
+
+# Get the domains into an string
+my $domains = "";
+if ($config->{network}->{domain}) {
+	for my $confdomains ($config->{network}->{domain}) {
+		for my $domain (@$confdomains) {
+			dprintf(3,"domain: $domain\n");
+			if (length($domains)) {
+				$domains .= " " . $domain;
+			} else {
+				$domains = $domain;
+			}
+		}
+	}
+}
+dprintf(2,"domains: %s\n", $domains);
+
+#########################################################################################################
+
+sub insert_before($$$) {
+	my ($ap,$ele,$item) = @_;
+
+	my @arr = @{ $ap };
+	my $end = scalar(@arr);
+	dprintf(3,"insert_before: end: %s\n", $end);
+	my $i;
+	for($i=0; $i < $end; $i++) {
+		dprintf(3,"insert_before: i[%d]: %s, ele: %s\n", $i, $arr[$i], $ele);
+		last if ($arr[$i] eq $ele);
+	}
+	dprintf(3,"insert_before: i: %s\n", $i);
+	splice(@$ap,$i,0,$item) if ($i < $end);
+}
+
+dprintf(1,"generating...\n");
+my @actions;
+if ($os =~ m/vtms/i) {
+	@actions = qw(header dns firewall license vmcp net pass);
+	$level = 0;
+	$emitlog = "";
+} else {
+	# XXX removed: rescan remote rootssh monitoring
+	if ($os eq "ESXi") {
+	# ESXi needs license before net as i get errors when setting vmotion nics
+	@actions = qw(wait license vmcp opts net dns disip6 disfw pass zeroconf histstats mm rename ntp heap rr nas iscsi patch save reboot wait mm joinvc);
+	$options{verbose} = 1;
+	} else {
+	# ESX 3.5 needs license after net/fw/etc as it uses an external server
+	@actions = qw(wait opts net dns firewall pass zeroconf histstats mm license vmcp rename ntp ram heap vmcons rr firmware patch reboot wait mm vsm psp joinvc nas iscsi);
+	}
+	unshift(@actions,"header");
+	push(@actions,"done");
+	push(@actions,"end");
+	push(@actions,"footer");
+	$options{do_service} = 1;
+}
+insert_before(\@actions,"dns","setway");
+insert_before(\@actions,"net","wipe_net") if ($wipe_net);
+
+for my $action (@actions) {
+	my $var = "do_" . $action;
+	$options{$var} = 1;
+}
+$options{do_logging} = 1;
+#dprintf(3,"in_state: %d\n", $in_state);
+#funcs->begin_state if (!$in_state && $action ne "header");
+my $last_action = "";
+for my $action (@actions) {
+	dprintf(3,"action: %s\n", $action);
+	my $func = "do_" . $action;
+	dprintf(3,"calling function: %s\n", $func);
+	funcs->$func;
+	$last_action = $action;
+}
+dprintf(3,"END in_state: %d\n", $in_state);
+exit 0;
+
+# ********************************************************************
+#
+# Funcs
+#
+# ********************************************************************
+
+package funcs;
+
+use Data::Dumper;
+
+#sub dprintf { my $level = shift; if ($debug >= $level) { foreach (@_) { $_ = '0' unless $_; } print "#"; printf(@_); } }
+sub dprintf { my $level = shift; if ($debug >= $level) { print "#"; printf(@_); } }
+#sub dprintf { }
+
+#########################################################################################################
+
+#
+### Utils
+#
+
+# Turn the version into a value
+sub verval {
+	my ($vstr) = @_;
+	my $val = 0;
+
+	dprintf(3,"verval: vstr: %s\n", $vstr);
+	my @vals = split('\.',$vstr);
+	foreach my $d (@vals) {
+		$val <<= 8;
+		$d = 0 unless($d =~ /^[+-]?\d+$/);
+		$val |= $d;
+		dprintf(5,"verval: val: %x, item: %d\n", $val, $d);
+	}
+	dprintf(3,"verval: returning: %d\n", $val);
+	return $val;
+}
+
+sub trim($) {
+	my $string = shift;
+	$string =~ s/^\s+//;
+	$string =~ s/\s+$//;
+	return $string;
+}
+
+sub genpass($) {
+	my $pass = shift(@_);
+	my @seeds = ('A'..'Z','a'..'z','-','/',0 ..9);
+	my $seed;
+	foreach my $i (0..7) {
+		$seed .= $seeds[int(rand(64))];
+	}
+	#print "\$seed is $seed\n";
+	my $salt = '$1$';
+	$salt .= $seed;
+	#print "\$salt is $salt\n";
+	my $enc_pass = crypt $pass, $salt;
+	dprintf(3,"enc_pass(1): %s\n", $enc_pass);
+	return $enc_pass;
+}
+
+sub emit($$) {
+	my $flag = shift(@_);
+	my $line = shift(@_);
+	# flag == 2 is verbose
+	$flag = 0 if ($quiet == 1);
+	if ($flag == 1 && length($emitlog) > 0) {
+		for (my $i = 0; $i < $level; $i++) { printf("\t"); }
+		my $verbout = $line;
+#		$verbout =~ s/\'/\\'/g;
+		$verbout =~ s/\"/\\"/g;
+#		$verbout =~ s/%//g;
+		printf("echo '>> ' \"$verbout\" >> $emitlog 2>&1\n");
+	}
+	for (my $i = 0; $i < $level; $i++) { printf("\t"); }
+	$line .= " >> $emitlog 2>&1" if ($flag == 1 && length($emitlog) > 0);
+	printf("%s\n",$line);
+}
+
+sub begin_state {
+	if ($options{do_service}) {
+		$state++;
+		emit(0,"$state)");
+		$level++;
+		$in_state = 1;
+	}
+}
+
+sub end_state {
+	if ($in_state || $in_step) {
+		if ($options{do_service}) {
+			my $donext = shift(@_);
+			$donext = shift(@_) if ($donext eq "funcs");
+			$donext = 0 unless($donext);
+			dprintf(3,"donext: %s\n", $donext);
+			if ($donext eq "1") {
+				emit(0,"let next_state=\$state+1");
+				emit(0,"echo \$next_state > \$state_file");
+			}
+			emit(0,";;");
+			$level--;
+			$in_state = 0;
+		}
+		# XXX end_state ends step
+		$in_step = 0;
+	}
+}
+
+sub begin_step($) {
+	my ($text) = @_;
+	begin_state if (!$in_state);
+	if (length($text) > 0) {
+#		emit(0,"# $text");
+		emit(0,"logit Info \"$text\"");
+	}
+	$in_step = 1;
+}
+
+sub end_step {
+	if ($in_step) {
+		emit(0,"");
+		$in_step = 0;
+	}
+}
+
+#########################################################################################################
+
+#
+### Header
+#
+
+# Print header
+sub do_header {
+printf("#!/bin/sh\n");
+printf("\n#\n## THIS FILE WAS AUTOMATICALLY GENERATED - DO NOT EDIT\n#\n\n");
+my $now = `date`;
+chomp($now);
+printf("# Generated on %s by genconf version %s\n", $now, $genconf_version);
+print q{
+
+# chkconfig: 3 99 07
+# description: auto install config
+
+# ...
+flag_file=/tmp/hostconf.running
+};
+if ($version_val < verval('6.5.0')) {
+	printf("sleep `python -c \"import random; print random.randrange(7)+1\"`\n");
+} else {
+	printf("sleep `awk -v seed=\$(date +%%N) 'BEGIN { srand(seed); printf(\"%%d\\n\",(rand()*60) %% 10)  }'`\n");
+}
+print q{
+test -f $flag_file && exit 0
+touch $flag_file
+
+test -f /etc/init.d/functions && . /etc/init.d/functions
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin; export PATH
+test -x /usr/bin/readlink && me=`/usr/bin/readlink -f $0`; test -z "$me" && me="$0"
+myname=`basename $me`
+#echo "me: $me"
+
+# Make sure vmware-vim-cmd avail (works on 3.5 - 6.x)
+test -f /usr/bin/vmware-vim-cmd || ln -s /usr/bin/vim-cmd /usr/bin/vmware-vim-cmd
+
+HOST=`hostname -s`
+FQDN=`hostname -f`
+};
+
+# Vars
+printf("start_file=%s/hostconf.start\n",$flagdir);
+printf("error_file=%s/hostconf.error\n",$flagdir);
+printf("done_file=%s/hostconf.done\n",$flagdir);
+printf("state_file=%s/hostconf.state\n",$statedir);
+printf("log=%s/hostconf.log\n",$logdir);
+printf("tmp=%s/hostconf.tmp\n",$tmpdir);
+printf("localvol=$shorthost-local\n");
+printf("way=%s\n",$waystation);
+printf("way_ip=%s\n",$way_ip);
+if ($os eq "ESXi") {
+	printf("hostd=/var/log/hostd.log\n");
+} else {
+	printf("hostd=/var/log/vmware/hostd.log\n");
+}
+
+if ($options{do_logging} || $options{do_joinvc}) {
+print q{
+# XXX this section should match getconf
+findit() {
+        for path in /etc/opt/LinuxCOE /etc/vmware/weasel /scratch
+        do
+                if test -f $path/"$1"; then
+                        echo $path/"$1"
+                        break
+                fi
+        done
+}
+replay=`findit $(hostname -s)-replay`
+test -z "$replay" && replay=`findit replay`
+test -z "$replay" && replay=`findit $(hostname)-replay`
+if test -z "$replay"; then
+	replay=/dev/null
+else
+};
+printf("sed -i -e 's:$way_ip:$waystation:' \$replay\n");
+printf("fi\n");
+#printf("test -z \"\$way\" && way=\"$default_waystation\"\n");
+#exit(0);
+# XXX shortway MUST appear after all way defines! (duh)
+print q{ 
+shortway=`echo "$way" | awk -F. '{ print $1 }'`
+
+# Make sure waytation is in /etc/hosts
+if test $(cat /etc/hosts | grep -c ^$way_ip) -eq 0; then
+	echo "$way_ip ${way} ${shortway}" >> /etc/hosts
+fi
+
+# XXX ESX 3 doesnt use vmnics so firstboot is jacked
+# Make sure waystation is reachable
+#wget -q http://$way/index.html -O /dev/null > /dev/null 2>&1
+#if test $? -ne 0; then
+#	echo "hostconf: error: unable to contact $way! aborting!" | tee -a $log
+#	exit 1
+#fi
+};
+}
+
+if ($options{do_logging}) {
+print q{
+logit() {
+	echo [`date`] $2 | tee -a $log
+	html_msg=`echo "$2" | sed "s: :%20:g"`
+	str="http://$way/cgi-bin/buildupd?host=$HOST&status=$1&msg=$html_msg"
+	eval wget -q '$str' -O /dev/null
+}
+};
+} else {
+print q{
+logit() {
+	echo [`date`] $2 | tee -a $log
+}
+};
+}
+
+if ($options{do_wait}) {
+print q{
+wait_hostd() {
+	let c=0
+	HOSTD_TIMEOUT=300
+	while test $c -lt $HOSTD_TIMEOUT
+	do
+		logit Info "Waiting for hostd to become ready..."
+		if test -f $hostd; then
+			if test `cat $hostd | grep -c "BEGIN SERVICES"` -gt 0; then
+				break;
+			fi
+		fi
+		sleep 10
+		let c=$c+10
+	done
+	if test $c -eq $HOSTD_TIMEOUT; then
+		logit Fail "Timeout waiting for hostd to become ready!"
+		echo 99$state > $state_file
+		return 1
+	fi
+	return 0
+}
+
+wait_https() {
+	let c=0
+	HTTPS_TIMEOUT=300
+	while test $c -lt $HTTPS_TIMEOUT
+	do
+		logit Info "Waiting for HTTPs to become ready..."
+		vmware-vim-cmd hostsvc/cpuinfo > /dev/null 2>&1
+		test $? -eq 0 && break
+		sleep 10
+		let c=$c+10
+	done
+	if test $c -eq $HTTPS_TIMEOUT; then
+		logit Fail "Timeout waiting for HTTPs to become ready!"
+		echo 99$state > $state_file
+		return 1
+	fi
+	return 0
+}
+};
+}
+
+if ($options{do_mm}) {
+print q{
+wait_mm() {
+	let c=0
+	MM_TIMEOUT=400
+	while test $c -lt $MM_TIMEOUT
+	do
+		logit Info "Waiting for host to be in maintenance mode..."
+		mm=`vmware-vim-cmd hostsvc/runtimeinfo 2>/dev/null | grep inMaintenanceMode | awk '{ print $3 }' | sed "s:,::"`
+		if test "$mm" = "true"; then
+			break
+		fi
+		sleep 10
+		let c=$c+10
+	done
+	if test $c -eq $MM_TIMEOUT; then
+		logit Fail "Timeout waiting for maintenance mode!"
+		echo 99$state > $state_file
+		return 1
+	fi
+	return 0
+}
+};
+}
+
+if ($options{do_wipe_net}) {
+print q{
+wipe_net() {
+esxcfg-vswitch -l > /tmp/t
+lastsw=""
+while read f1 f2 f3 f4 f5 f6
+do
+	test `echo $f1 | grep -c -e ^Switch -e ^PortGroup` -gt 0 && continue
+	test -z "$f1" && continue
+	pnic=`esxcfg-vswitch -l | grep "Management" | awk '{ print $NF }' | awk -F, '{ print $1 }`
+	echo "pnic: $pnic"
+	if test "$f5" = "1500"; then
+		if test -n "$lastsw"; then
+			test "$lastsw" = "vSwitch0" || esxcfg-vswitch -d $lastsw
+		fi
+		sw="$f1"
+		echo "Switch: $sw"
+		IFS=","
+		for nic in $f6
+		do
+			echo "nic: $nic"
+			test "$nic" = "$pnic" && continue
+			esxcfg-vswitch -U $nic $sw
+		done
+		unset IFS
+		continue
+	fi
+	lastsw="$sw"
+	if test `echo $f2 | grep -c '^[0-9]'` -gt 0; then
+		pg="$f1"
+	elif test `echo $f3 | grep -c '^[0-9]'` -gt 0; then
+		pg="$f1 $f2"
+	elif test `echo $f4 | grep -c '^[0-9]'` -gt 0; then
+		pg="$f1 $f2 $f3"
+	else
+		continue
+	fi
+	test "$pg" = "Service Console" && continue
+	test "$pg" = "Management Network" && continue
+#	echo "pg: $pg"
+	test "$pg" = "Vmotion" && esxcfg-vmknic -d vmk0 -p Vmotion
+	esxcfg-vswitch -D "$pg" $sw
+done < /tmp/t
+if test -n "$lastsw"; then
+	test "$lastsw" = "vSwitch0" || esxcfg-vswitch -d $lastsw
+fi
+	vmware-vim-cmd hostsvc/net/refresh
+}
+};
+}
+
+if ($options{do_rr}) {
+print q{
+do_nmp_wipe() {
+IFS="%"
+	test -n "$pspOptions" && t1="-O '$pspOptions'"
+	test -n "$claimOptions" && t2="-c '$claimOptions'"
+	cmd=`echo eval esxcli storage nmp satp rule remove -s $lastsatp -P $psp -V '$vendor' -M '$model' $t1 $t2`
+	echo "cmd: $cmd" >> $log
+	eval $cmd >> $log 2>&1
+IFS=" "
+}
+
+wipe_nmp() {
+	cat /etc/vmware/esx.conf | grep -e ^/storage/plugin/NMP/config | grep rules > /tmp/rules.txt
+	lastsatp=""
+	lastrule=""
+	while read line
+	do
+#		echo $line
+		t=`echo "$line" | sed -e 's:^/storage/plugin/NMP/config::'`
+		t=`echo "$t" | sed 's/[^a-zA-Z0-9_=,";]/ /g'`
+#		echo $t
+		satp=`echo "$t" | awk '{ print $1 }'`
+		test "$satp" != "$lastsatp" && rundo=1
+		if test "$satp" != "$lastsatp"; then
+			test -n "$lastsatp" && do_nmp_wipe
+		fi
+		lastsatp="$satp"
+		rule=`echo "$t" | awk '{ print $3 }'`
+		if test "$rule" != "$lastrule"; then
+			test -n "$lastrule" && do_nmp_wipe
+		fi
+		lastrule="$rule"
+		field=`echo "$t" | awk '{ print $4 }'`
+		value=`echo "$t" | awk -F'= ' '{ print $2 }'`
+#		echo "value: $value"
+		eval $field='$value'
+	done < /tmp/rules.txt
+	test -n "$lastrule" && do_nmp_wipe
+}
+};
+}
+
+if ($options{do_rename} && $version_val >= verval('5.0.0')) {
+print q{
+rename_local() {
+set -x
+	localcli storage vmfs extent list >/tmp/t 2>/dev/null
+	while read line
+	do
+		last=`echo $line | awk '{ print $NF }'`
+		if test "$last" = "3"; then
+			uuid=`echo $line | awk '{ print $(NF-3) }'`
+			volname=`echo $line | awk -F" $uuid" '{ print $1 }'`
+			echo "volname: $volname"
+			vmware-vim-cmd hostsvc/datastore/rename "$volname" $localvol
+			break
+		fi
+	done < /tmp/t
+set +x
+}
+};
+}
+
+#c=`hexdump -n 2048 $dev | grep -v -e '0000 0000 0000 0000 0000 0000 0000 0000' -e '*' -e '0000800' | wc -l`
+if ($options{do_mkvols}) {
+printf("\nmkvols() {\n");
+printf("cat > $bindir/mkvols <<\\EOF\n");
+printf("wget -q http://\$way/cgi-bin/volconfig?ServerName=%s -O - | grep driveVolume= > /tmp/volconfig.tmp\n",$shorthost);
+if ($version_val >= verval('5.0.0')) {
+	printf("type=\"vmfs5\"\n");
+} else {
+	printf("type=\"vmfs3\"\n");
+}
+printf("PREFIX=\"%s\"\n",$cluster);
+print q{num=1
+while read line
+do
+	size=`echo $line | awk -F'totalSpace=' '{ print $2 }' | awk '{ print $1 }' | sed "s:\"::g"`
+	test "$size" = "2047" && size=1999
+	name=`printf "%s-SAN%02d" "$PREFIX" "$num"`
+	let num=$num+1
+	test `esxcfg-scsidevs -m | grep -c $name` -gt 0 && continue
+	esxcfg-scsidevs -c | grep -e Fibre -e ^naa\. > /tmp/devs.dat
+	while read dev_uid dev_type dev_cons dev_size dev_mp dev_plugin
+	do
+		test "$dev_size" = "NMP" && continue
+		sz=`echo $dev_size | sed "s:MB$::"`
+		let dev_size=$sz/1024
+		test "$size" = "$dev_size" || continue
+		dev=/vmfs/devices/disks/$dev_uid
+	        test -e $dev || continue
+		c=`partedUtil get $dev | wc -l`
+		if test "$c" = "1"; then
+			if test "$type" = "vmfs5"; then
+				bs=1
+			else
+				let bs=$size/256
+				let sz=$bs*256
+				test "$size" = "$sz" || let bs=$bs+1
+			fi
+			info=`partedUtil get $dev`
+			cyls=`echo $info | awk '{ print $1 }'`
+			secs=`echo $info | awk '{ print $2 }'`
+			heads=`echo $info | awk '{ print $3 }'`
+			let total=$cyls*$secs*$heads-1
+			partedUtil setptbl $dev msdos "1 128 $total 251 0"
+			logit Info "Creating volume: $name"
+			vmkfstools --createfs $type --blocksize "$bs"M --setfsname $name $dev:1
+			break
+		fi
+	done < /tmp/devs.dat
+done < /tmp/volconfig.tmp
+};
+printf("EOF\n");
+printf("sh -x $bindir/mkvols > $logdir/mkvols.log 2>&1\n");
+printf("}\n");
+}
+
+if ($options{do_reboot}) {
+print q[
+disable_startup() {
+	if test -f /etc/rc.local.d/local.sh; then
+		local=/etc/rc.local.d/local.sh
+	else
+		if test -f /etc/rc.d/rc.local; then
+			local=/etc/rc.d/rc.local
+		else
+			local=/etc/rc.local
+		fi
+	fi
+	sed -i -e "s:^test -f :#test -f :" $local
+}
+];
+
+	my $save_level = $level;
+	$level = 1;
+	printf("\ndo_reboot() {\n");
+	printf("\tlet next_state=\$state+1\n");
+	printf("\techo \$next_state > \$state_file\n");
+if (0) {
+	if ($version_val >= verval('5.1.0')) {
+		printf("\tif test \`cat /etc/rc.local | grep -c '^test -f /scratch/hostconf'\` eq 0; then\n");
+		printf("\t\tchmod 1755 /etc/rc.local\n");
+		printf("\t\techo \"test -f /scratch/hostconf && nohup /scratch/hostconf start > /dev/null 2>&1 &\" >> /etc/rc.local\n");
+		printf("\tfi\n");
+	}
+	emit(1,"/sbin/backup.sh 1") if ($os eq "ESXi");
+}
+	emit(1,"rm -f \$flag_file");
+	emit(1,"eject > /dev/null 2>&1");
+	emit(1,"reboot");
+	emit(1,"while true; do sleep 10; done");
+	printf("}\n\n");
+	$level = $save_level;
+}
+
+if ($options{do_service}) {
+	printf("doit() {\n");
+	printf("\tlogit Info \"Config file: %s\"\n",$filename);
+	printf("\t/sbin/chkconfig \$myname on >> $log 2>&1\n") if ($os eq "ESX");
+print q[
+#	logit Info "waystation: $way"
+	while true
+	do
+		state=`cat $state_file`
+#		logit Info "state: $state"
+		case $state in
+		0)
+			touch $start_file
+			logit Info "Starting hostconf"
+			let next_state=$state+1
+			echo $next_state > $state_file
+			rm -f $log $error_file
+			;;
+];
+}
+
+}
+# End header
+
+#########################################################################################################
+
+#
+### Footer
+#
+
+sub do_footer {
+	funcs->end_state(0);
+	printf("\t\t*)\n");
+	if ($os eq "ESXi") {
+		printf("\t\t\tdisable_startup\n");
+	} else {
+		printf("\t\t\t/sbin/chkconfig \$myname off >> $log 2>&1\n");
+	}
+print q[
+			touch $error_file
+			rm -f $flag_file
+			exit 1
+			;;
+		esac
+	done
+	rm -f $flag_file
+	exit 0
+}
+
+test -f $state_file || echo 0 > $state_file
+state=`cat $state_file`
+case "$1" in
+init)
+        echo 0 > $state_file
+	state=0
+	rm -f $error_file $done_file
+        doit
+        ;;
+];
+my @sections = qw(setway dns ntp wipe_net net joinvc nas iscsi patch license vmcp rr);
+foreach(@sections) {
+	my $fname = "do_" . $_;
+	dprintf(2,"fname: %s\n", $fname);
+	if (defined($states{$fname})) {
+		my $state = $states{$fname};
+		printf("$_)\n");
+		printf("\techo $state > \$state_file\n");
+		printf("\tdoit $_\n");
+		printf("\t;;\n");
+	}
+}
+print q[
+start)
+	if test `echo $state | grep -c ^99` -gt 0; then
+		logit Fail "error: attempted start from error state: $state"
+		rm -f $flag_file
+		exit 1
+	fi
+        doit
+        ;;
+stop)
+        ;;
+status)
+	echo "current state: $state"
+        ;;
+restart)
+	if test `echo $state | grep -c ^99` -eq 0; then
+		echo "error: state ($state) not restartable"
+		rm -f $flag_file
+		exit 1
+	fi
+	rm -f $error_file
+	echo $state | sed "s:^99::" > $state_file
+	state=`cat $state_file`
+	doit
+	;;
+*)
+	echo $"Usage: $myname {start|stop|status|restart}"
+	rm -f $flag_file
+	exit 3
+	;;
+esac
+rm -f $flag_file
+exit 0
+];
+}
+#end Footer
+
+#######################################################################################################
+
+#
+### Core funcs
+#
+
+sub do_end {
+	end_state(1) if ($in_state);
+	begin_state;
+	begin_step("");
+	if ($os eq "ESXi") {
+		emit(0,"disable_startup");
+	} else {
+		emit(1,"/sbin/chkconfig \$myname off");
+	}
+	emit(0,"break");
+#	end_step;
+}
+
+sub do_done {
+#	end_state(1) if ($in_state);
+#	begin_state;
+	begin_step("Cleaning up");
+	emit(1,"rm -f \$start_file \$error_file");
+	emit(1,"touch \$done_file");
+	emit(0,"logit Info Finished");
+	end_step;
+}
+
+sub do_wait {
+	begin_step("Waiting for ESX services to come up...");
+	emit(0,"wait_hostd; test \$? -ne 0 && continue");
+	emit(0,"wait_https; test \$? -ne 0 && continue");
+	end_step;
+}
+
+sub do_zeroconf {
+	if ($os eq "ESX") {
+		begin_step("");
+		emit(0,"if test -f /etc/sysconfig/network; then");
+		emit(0,"	if test `cat /etc/sysconfig/network | grep -c ^NOZEROCONF` -eq 0; then");
+		emit(0,"		logit Info \"Turning off ZEROCONF\"");
+		emit(0,"		echo \"NOZEROCONF=yes\" >> /etc/sysconfig/network");
+		emit(0,"	fi");
+		emit(0,"fi");
+		end_step;
+	}
+}
+
+sub do_histstats {
+	begin_step("Enabling historical statistics collection");
+	emit(0,"sed -i -e 's:<historicalStatsEnabled> false </historicalStatsEnabled>:<historicalStatsEnabled> true </historicalStatsEnabled>:'  /etc/vmware/hostd/config.xml");
+	end_step;
+}
+
+sub do_disip6 {
+#	dprintf(1,"version_val: %x, 5.1.0: %x\n", $version_val, verval('5.1.0'));
+	begin_step("Disabling IPv6");
+	if ($os eq "ESX") {
+		emit(1,"esxcfg-vswif --enable-ipv6 false");
+	} else {
+		emit(1,"esxcfg-vmknic --enable-ipv6 false");
+	}
+	end_step;
+}
+
+# Enter maintenance mode
+sub do_mm {
+	begin_step("Entering Maintenance Mode");
+	emit(1,"vmware-vim-cmd hostsvc/maintenance_mode_enter");
+	emit(1,"vmware-vim-cmd hostsvc/net/refresh");
+	emit(0,"wait_mm");
+	end_step;
+}
+
+# Set license
+sub do_license {
+	end_state(1) if ($in_state);
+	begin_state;
+	$states{do_license} = $state;
+	begin_step("Setting license");
+	if ($version_val < verval('4.0.0')) {
+		emit(1,"vmware-vim-cmd vimsvc/license --source server $license");
+	} else {
+		emit(1,"vmware-vim-cmd vimsvc/license --set $license");
+	}
+        emit(1,"vmware-vim-cmd hostsvc/net/refresh");
+        emit(1,"vmware-vim-cmd internalsvc/refresh_network");
+	emit(0,"test \"\$1\" = \"license\" && break\n");
+	end_state(1);
+}
+
+# Modify config for VM console copy/paste
+sub do_vmcp {
+	end_state(1) if ($in_state);
+	begin_state;
+	$states{do_vmcp} = $state;
+	begin_step("Setting VM console copy/paste");
+	emit(0,"conf=/etc/vmware/config");
+	emit(0,"test \$(cat \$conf | grep -c ^vmx.fullpath) -eq 0 && echo vmx.fullpath = \\\"/bin/vmx\\\" >> \$conf\n");
+	emit(0,"test \$(cat \$conf | grep -c ^isolation.tools.copy.disable) -eq 0 && echo isolation.tools.copy.disable = \\\"FALSE\\\" >> \$conf\n");
+	emit(0,"test \$(cat \$conf | grep -c isolation.tools.paste.disable) -eq 0 && echo isolation.tools.paste.disable = \\\"FALSE\\\" >> \$conf\n");
+	emit(0,"test \"\$1\" = \"vmcp\" && break\n");
+	end_state(1);
+}
+
+sub do_dns {
+	# Setup DNS
+        end_state(1) if ($in_state);
+        begin_state;
+	$states{do_dns} = $state;
+	begin_step("Setting up DNS");
+	emit(1,"esxcli network ip dns server remove --all --server=all") if ($version_val >= verval('5.0.0'));
+	if ($version_val < verval('5.0.0')) {
+		emit(0,"rm -f /etc/resolv.conf");
+	}
+	for my $servers ($config->{network}->{dns}) {
+		dprintf(1,"dns servers: %s\n", ref $servers);
+		for my $server (@$servers) {
+			dprintf(2,"server: $server\n");
+			if ($version_val >= verval('5.0.0')) {
+				emit(1,"esxcli network ip dns server add --server=$server");
+			} else {
+				emit(0,"echo nameserver $server >> /etc/resolv.conf");
+			}
+		}
+	}
+
+# 	my @servers = split(' ',$dns_servers);
+#        foreach my $server (@servers) {
+#                dprintf(2,"server: $server");
+#		if ($version_val >= verval('5.0.0')) {
+#			emit(1,"esxcli network ip dns server add --server=$server");
+#		} else {
+#			emit(0,"echo nameserver $server >> /etc/resolv.conf");
+#		}
+#        }
+
+	# Get this host's domain
+	emit(0,"sed -i -e '/^search/d' /etc/resolv.conf");
+	dprintf(3,"host domain: %s\n", $domain);
+	$domains =~ s/ $domain//;
+	dprintf(3,"domains WITHOUT host domain: $domains");
+	# If host's domain not in domains, add it to front
+	$domains = $domain . " " . $domains unless ($domains =~ m/$domain/);
+	dprintf(2,"domains: %s\n", $domains);
+	if ($version =~ m/[34]\.[0-9]/) {
+		emit(0,"echo search $domains >> /etc/resolv.conf");
+	} else {
+		my @doms = split(' ',$domains);
+		foreach my $domain (@doms) {
+			dprintf(2,"domain: $domain");
+			emit(1,"esxcli network ip dns search add --domain=$domain");
+		}
+	}
+	emit(0,"test \"\$1\" = \"dns\" && break\n");
+	end_state(1);
+}
+
+# Turn off firewall
+sub do_disfw {
+	begin_step("Disabling firewall");
+	if ($version_val == verval('5.0.0')) {
+		emit(1,"esxcli network firewall ruleset unload");
+	} elsif ($version_val >= verval('5.1.0')) {
+		emit(1,"esxcli network firewall unload");
+	} else {
+		emit(1,"esxcfg-firewall --allowIncoming --allowOutgoing");
+	}
+	end_step;
+}
+
+# Setup firewall
+sub do_firewall {
+	begin_step("Configuring firewall");
+	if ($version_val < verval('5.0.0')) {
+		emit(1,"esxcfg-firewall --blockIncoming --blockOutgoing");
+		my @ports = (
+			"22,tcp,in,ssh",
+			"80,tcp,out,http",
+			"280,tcp,out,unkown",
+			"2301,tcp,in,hpim",
+			"2381,tcp,in,hpim",
+			"2381,tcp,out,hpim",
+			"5555,tcp,in,omni",
+			"12346,tcp,in,pblocald",
+			"12345,tcp,out,pbmasterd",
+		);
+		for my $spec (@ports) {
+			emit(1,"esxcfg-firewall --openPort $spec");
+		}
+		for my $id (qw(activeDirectorKerberos ftpClient kerberos LDAP LDAPS nfsClient ntpClient snmpd sshClient sshServer updateManager vpxHeartbeats CIMSLP CIMHttpsServer)) {
+			emit(1,"esxcfg-firewall -e $id");
+		}
+		if ($version_val >= verval('4.0.0')) {
+			for my $id (qw(faultTolerance)) {
+				emit(1,"esxcfg-firewall -e $id");
+			}
+		} else {
+			for my $id (qw(LicenseClient)) {
+				emit(1,"esxcfg-firewall -e $id");
+			}
+		}
+	} else {
+		for my $id (qw(nfsClient ntpClient iSCSI updateManager activeDirectoryAll httpClient syslog)) {
+			emit(1,"esxcli network firewall ruleset set --ruleset-id=\"$id\" --enabled yes");
+		}
+	}
+	end_step;
+}
+
+# Enable remote access for 5.x+ boxes
+sub do_remote {
+	if ($os eq "ESXi") {
+		begin_step("Enabling remote access");
+		for my $svc (qw(enable_ssh start_ssh enable_esx_shell start_esx_shell)) {
+			emit(1,"vmware-vim-cmd hostsvc/$svc");
+		}
+		emit(1,"esxcli system settings advanced set -o /UserVars/SuppressShellWarning -i 1");
+		end_step;
+	}
+}
+
+sub do_ntp {
+        end_state(1) if ($in_state);
+        begin_state;
+	$states{do_ntp} = $state;
+	begin_step("Configuring NTP");
+	if ($config->{network}->{ntp}) {
+		emit(0,"echo restrict default kod nomodify notrap nopeer > /etc/ntp.conf");
+		emit(0,"echo restrict 127.0.0.1 >> /etc/ntp.conf");
+                for my $servers ($config->{network}->{ntp}) {
+                        dprintf(1,"ntp servers: %s\n", ref $servers);
+                        for my $server (@$servers) {
+				dprintf(2,"server: $server\n");
+				emit(0,"echo server $server >> /etc/ntp.conf");
+                        }
+                }
+		emit(0,"echo driftfile /etc/ntp.drift >> /etc/ntp.conf");
+		emit(1,"/sbin/chkconfig ntpd on");
+		emit(1,"/etc/init.d/ntpd restart");
+        }
+#		my @servers = split(' ',$ntp_servers);
+#		foreach my $server (@servers) {
+#			dprintf(2,"server: $server\n");
+#			emit(0,"echo server $server >> /etc/ntp.conf");
+#		}
+	emit(0,"test \"\$1\" = \"ntp\" && break\n");
+	end_state(1);
+}
+
+# Set VMFS3 MaxHeapSize
+sub do_heap {
+	my $heap = ($version_val >= verval('5.0.0') ? 256 : 128);
+	begin_step("Setting VMFS3 MaxHeapSizeMB to: $heap");
+	emit(1,"esxcfg-advcfg --set $heap /VMFS3/MaxHeapSizeMB");
+	end_step;
+}
+
+# Enable VHV
+sub do_vhv {
+	begin_step("Enabling VHV");
+	emit(0,"if test `cat /etc/vmware/config | grep -c ^vhv` -eq 0; then echo vhv.enable = \\\"true\\\" >> /etc/vmware/config; fi");
+	end_step;
+}
+
+# Rename internal disk
+sub do_rename {
+	if ($version_val < verval('5.0.0')) {
+		begin_step("Renaming internal disk to: \$localvol");
+		emit(1,"vmware-vim-cmd hostsvc/datastore/rename internal \$localvol");
+	} else {
+		begin_step("Renaming internal disk to: \$localvol");
+		emit(1,"rename_local");
+	}
+	end_step if ($in_step);
+}
+
+# Create monitoring user
+sub do_monitoring {
+	begin_step("Adding monitoring user");
+	# Tested on: 3.5, 4.0, 4.1, 5.0, 5.1
+	my $enc_pass = genpass("need2know");
+	emit(0,"if test -x /usr/lib/vmware/auth/bin/adduser; then");
+	$level++;
+	emit(1,"/usr/lib/vmware/auth/bin/deluser sitescope");
+	emit(1,"/usr/lib/vmware/auth/bin/adduser -g SiteScopeMonitoring -s /bin/false -G users -D -H sitescope");
+	$level--;
+	emit(0,"else");
+	$level++;
+	emit(1,"userdel sitescope");
+	emit(1,"useradd -M -n -c SiteScopeMonitoring -s /bin/false sitescope");
+	$level--;
+	emit(0,"fi");
+	emit(0,"if test -x /usr/lib/vmware/auth/bin/passwd; then");
+	$level++;
+	emit(1,"echo 'need2know' | /usr/lib/vmware/auth/bin/passwd -s sitescope");
+	$level--;
+	emit(0,"else");
+	$level++;
+	emit(1,"passwd -d sitescope");
+	emit(1,"sed -i -e 's|sitescope::|sitescope:$enc_pass:|' /etc/shadow");
+	$level--;
+	emit(0,"fi");
+	emit(1,"vmware-vim-cmd vimsvc/auth/entity_permission_add vim.Folder:ha-folder-root 'sitescope' false ReadOnly true");
+	end_step;
+}
+
+# Rescan HBAs
+sub do_rescan {
+	begin_step("Rescanning HBAs");
+	emit(0,"HBAs=\`esxcfg-info | grep vmkernel -i | grep hba | awk -F. {'print \$29'} | sort -u\`");
+	emit(1,"for i in \$HBAs; do test -z \"\$i\" && continue; esxcfg-rescan \$i; done");
+}
+
+# XXX
+# to get a list of devices, scan the system:
+# esxcli storage core adapter rescan --all
+# grep -i scsiscan /var/log/vmkernel.log
+#2016-06-17T06:34:01.689Z cpu0:33541)ScsiScan: 976: Path 'vmhba1:C0:T0:L0': Vendor: '3PARdata'  Model: 'VV              '  Rev: '3213'
+#2016-06-17T06:34:01.689Z cpu0:33541)ScsiScan: 979: Path 'vmhba1:C0:T0:L0': Type: 0x0, ANSI rev: 6, TPGS: 1 (implicit only)
+
+# Set RR as default PSP for VMW_SATP_ALUA
+sub do_rr {
+	end_state(1) if ($in_state);
+	begin_state;
+	$states{do_rr} = $state;
+	begin_step("");
+	if ($version_val >= verval('5.0.0')) {
+		emit(0,"logit Info \"Setting multipath policy\"");
+#		emit(1,"for satp in `esxcli storage nmp satp list | awk '{ print $1 }'`; do esxcli storage nmp satp set --satp $satp --default-psp VMW_PSP_RR; done");
+		emit(0,"esxcli storage nmp satp set --satp VMW_SATP_DEFAULT_AA --default-psp VMW_PSP_RR");
+		emit(0,"esxcli storage nmp satp set --satp VMW_SATP_ALUA --default-psp VMW_PSP_RR");
+		emit(0,"esxcli storage nmp satp set --satp VMW_SATP_EVA --default-psp VMW_PSP_RR");
+		emit(0,"esxcli storage nmp satp set --satp VMW_SATP_MSA --default-psp VMW_PSP_RR");
+		# Set all FC Devs to use RR
+		emit(0,"FC_DEVs=\`esxcli storage nmp device list | grep \"Fibre Channel Disk\" | awk  {'print \$NF'}| sed -e \"s/[()]//g\"\`");
+		emit(0,"for i in \$FC_DEVs; do esxcli storage nmp device set --device=\$i --psp=VMW_PSP_RR; done");
+		# Wipe NMP before starting
+		emit(0,"wipe_nmp");
+		# Linux iSCSI
+		# QNAP iSCSI
+		emit(0,"esxcli storage nmp satp rule add -s VMW_SATP_ALUA -P VMW_PSP_RR -O \"policy=iops;iops=1\" -V QNAP -M \"iSCSI Storage\" -e \"QNAP iSCSI Custom Rule\"");
+		# 3PAR Best Practices
+		emit(0,"esxcli storage nmp satp rule add -s VMW_SATP_ALUA -P VMW_PSP_RR -O \"policy=iops;iops=1\" -c tpgs_on -V 3PARdata -M VV -e \"HP 3PAR Custom Rule\"");
+		emit(0,"esxcli storage nmp satp rule add -s VMW_SATP_DEFAULT_AA -P VMW_PSP_RR -O \"policy=iops;iops=1\" -c tpgs_off -V 3PARdata -M VV -e \"HP 3PAR Custom Rule\"");
+		emit(0,"esxcli storage nmp satp rule add -s VMW_SATP_DEFAULT_AA -P VMW_PSP_RR -O \"policy=iops;iops=1\" -V IET -M VIRTUAL-DISK -e \"Linux iSCSI Custom Rule\"");
+		# Set IOPS=1 on already present devices
+#		emit(0,"for i in $(esxcli storage nmp device list | grep -e 3PARdata -e QNAP -e IET | awk  {'print \$NF'}| sed -e \"s/[()]//g\"\); do esxcli storage nmp psp roundrobin deviceconfig set -t iops -I 1 -d \$i; done");
+		emit(0,"esxcli storage nmp device list | grep -e 3PARdata -e QNAP -e IET | awk  {'print \$NF'}| sed -e \"s/[()]//g\"\ > /tmp/nmp.dat");
+		emit(0,"while read d; do esxcli storage nmp psp roundrobin deviceconfig set -t iops -I 1 -d \$d; done < /tmp/nmp.dat");
+		emit(0,"esxcli storage core claimrule load");
+		emit(0,"esxcli storage core claimrule run");
+		emit(0,"esxcli storage core adapter rescan --all");
+#		emit(0,"for i in \`esxcli storage nmp device list | grep 3PARdata | awk  '{print \$NF}'| sed -e \"s/[()]//g\"\`; do esxcli storage nmp psp roundrobin deviceconfig get -d \$i; done");
+		emit(0,"esxcli storage nmp device list");
+	} elsif ($version_val >= verval('4.0.0')) {
+		emit(0,"logit Info \"Setting multipath policy\"");
+		emit(0,"esxcli nmp satp setdefaultpsp --satp VMW_SATP_DEFAULT_AA --psp VMW_PSP_RR");
+		emit(0,"esxcli nmp satp setdefaultpsp --satp VMW_SATP_ALUA --psp VMW_PSP_RR");
+		emit(0,"esxcli nmp satp setdefaultpsp --satp VMW_SATP_EVA --psp VMW_PSP_RR");
+		emit(0,"esxcli nmp satp setdefaultpsp --satp VMW_SATP_MSA --psp VMW_PSP_RR");
+		emit(0,"HP_DEVs=\`esxcli nmp device list | grep \"Fibre Channel Disk\" | awk  {'print \$NF'}| sed -e \"s/[()]//g\"\`");
+		emit(1,"for i in \$HP_DEVs; do esxcli nmp device setpolicy --device \$i --psp VMW_PSP_RR; done");
+	}
+	end_step;
+        emit(0,"test \"\$1\" = \"rr\" && break\n");
+	end_state(1);
+}
+
+sub do_setway {
+	end_state(1) if ($in_state);
+	begin_state;
+	$states{do_setway} = $state;
+	begin_step("Setting waypoint to $waystation");
+	emit(0,"sed -i -e '/^waystation=/cwaystation=$waystation' \$replay");
+	emit(0,"test \"\$1\" = \"setway\" && break\n");
+	end_state(1);
+}
+
+sub refresh_net {
+	emit(1,"vmware-vim-cmd hostsvc/net/refresh");
+	emit(1,"vmware-vim-cmd internalsvc/refresh_network");
+}
+
+sub add_vswitch {
+	my $name = shift(@_);
+	my $ports = shift(@_);
+	if ($version_val < verval('5.0.0')) {
+		emit(1,"esxcfg-vswitch -a \"$name\":$ports");
+	} else {
+		$cmd = "esxcli network vswitch standard add --vswitch-name=\"$name\"";
+		$cmd .= " --ports=$ports" if ($ports);
+		emit(1,"$cmd");
+	}
+	emit(1,"sleep 5");
+}
+
+sub add_portgroup {
+	my $pgname = shift(@_);
+	my $switch = shift(@_);
+	if ($version_val < verval('5.0.0')) {
+		emit(1,"esxcfg-vswitch -A \"$pgname\" \"$switch\"");
+	} else {
+		emit(1,"esxcli network vswitch standard portgroup add --portgroup-name=\"$pgname\" --vswitch-name=\"$switch\"");
+	}
+}
+
+sub del_portgroup {
+	my $swname = shift(@_);
+	my $pgname = shift(@_);
+	if ($version_val < verval('5.0.0')) {
+		emit(1,"esxcfg-vswitch --del-pg=\"$pgname\" \"$swname\"");
+	} else {
+		emit(1,"esxcli network vswitch standard portgroup remove --portgroup-name=\"$pgname\" --vswitch-name=\"$swname\"");
+	}
+}
+
+sub add_uplink {
+	my $vmnic = shift(@_);
+	my $switch = shift(@_);
+	if ($version_val < verval('5.0.0')) {
+		emit(1,"esxcfg-vswitch -L $vmnic \"$switch\"");
+	} else {
+		emit(1,"esxcli network vswitch standard uplink add --uplink-name=$vmnic --vswitch-name=\"$switch\"");
+	}
+}
+
+sub remove_uplink {
+	my $vmnic = shift(@_);
+	my $switch = shift(@_);
+	if ($version_val < verval('5.0.0')) {
+		emit(1,"esxcfg-vswitch -U $vmnic \"$switch\"");
+	} else {
+		emit(1,"esxcli network vswitch standard uplink remove --uplink-name=$vmnic --vswitch-name=\"$switch\"");
+	}
+}
+
+sub enable_cdp {
+	my $switch = shift(@_);
+	if ($version_val < verval('5.0.0')) {
+		emit(1,"esxcfg-vswitch -B both \"$switch\"");
+	} else {
+		emit(1,"esxcli network vswitch standard set --cdp-status=both --vswitch-name=\"$switch\"");
+	}
+}
+
+sub add_vmknic {
+	my $ifname = shift(@_);
+	my $type = shift(@_);
+	my $ip = shift(@_);
+	my $netmask = shift(@_);
+	my $pgname = shift(@_);
+	if ($version_val < verval('5.0.0')) {
+		emit(1,"esxcfg-vmknic -a -i $ip -n $netmask \"$pgname\"");
+		emit(1,"sleep 5");
+	} else {
+		emit(1,"esxcli network ip interface add --interface-name=$ifname --portgroup-name=\"$pgname\"");
+		emit(1,"sleep 5");
+		$cmd = "esxcli network ip interface ipv4 set --type=$type";
+		$cmd .= " --ipv4=$ip --netmask=$netmask" if ($ip);
+		emit(1,"$cmd --interface-name=$ifname");
+		emit(1,"esxcli network ip interface set --enabled=true --interface-name=$ifname");
+	}
+}
+
+sub add_route {
+	my $src = shift(@_);
+	my $mask = shift(@_);
+	my $gw = shift(@_);
+	emit(1,"esxcfg-route -a $src $mask $gw");
+}
+
+sub set_mtu {
+	my $swname = shift(@_);
+	my $mtu = shift(@_);
+	if ($version_val < verval('5.0.0')) {
+		emit(1,"esxcfg-vswitch --mtu=$mtu \"$swname\"");
+	} else {
+		emit(1,"esxcli network vswitch standard set --mtu=$mtu --vswitch-name=\"$swname\"");
+	}
+}
+
+sub set_if_mtu {
+	my $pgname = shift(@_);
+	my $ifname = shift(@_);
+	my $mtu = shift(@_);
+	if ($version_val < verval('5.0.0')) {
+		emit(1,"esxcfg-vmknic --mtu $mtu \"$pgname\"");
+	} else {
+		emit(1,"esxcli network ip interface set --mtu=$mtu --interface-name=$ifname");
+	}
+}
+
+sub set_vlan {
+	my $swname = shift(@_);
+	my $pgname = shift(@_);
+	my $vlan = shift(@_);
+	if ($version_val < verval('5.0.0')) {
+		emit(1,"esxcfg-vswitch --vlan=$vlan --pg=\"$pgname\" \"$swname\"");
+	} else {
+		emit(1,"esxcli network vswitch standard portgroup set --vlan-id=$vlan --portgroup-name=\"$pgname\"");
+	}
+}
+
+sub do_wipe_net {
+	end_state(1);
+	begin_state;
+	$states{do_wipe_net} = $state;
+	begin_step("Wiping network config");
+	emit(1,"wipe_net");
+	emit(0,"test \"\$1\" = \"wipe_net\" && break\n");
+	end_state(1);
+}
+
+sub get_policy_str($$) {
+	my ($config,$uplinks) = @_;
+	$uplinks = "" unless($uplinks);
+	dprintf(3,"get_policy: uplinks: %s\n",$uplinks);
+	my $active = $config->{active};
+	$active = "" unless($active);
+	$active = $uplinks if (!length($active));
+	my $anics = "";
+	foreach my $nic (split(',',$active)) {
+		my $anic="vmnic$nic";
+		$anics .= "," if (length($anics));
+		$anics .= $anic;
+	}
+	my $failback = $config->{failback};
+	my $detection = $config->{detection};
+	my $balancing = $config->{balancing};
+	my $notify = $config->{notify};
+	my $standby = $config->{standby};
+	$standby = "" unless($config->{standby});
+	my $snics = "";
+	foreach my $nic (split(',',$standby)) {
+		my $snic="vmnic$nic";
+		$snics .= "," if (length($snics));
+		$snics .= $snic;
+	}
+	my $str = "";
+	if ($version =~ /^[34]\.[0-9]/) {
+		$str .= "--nicorderpolicy-active=$anics " if (length($anics));
+		$str .= "--nicorderpolicy-standby=$snics " if (length($snics));
+	} else {
+		$str .= "--active-uplinks=$anics " if (length($anics) > 0);
+		$failback = "" unless($failback);
+		if ($failback eq "true" || $failback eq "yes") {
+			$str .= "--failback=yes "
+		} elsif ($failback eq "false" || $failback eq "no") {
+			$str .= "--failback=no "
+		}
+		$str .= "--failure-detection=$detection " if ($detection);
+		$str .= "--load-balancing=$balancing " if ($balancing);
+		$notify = "" unless($notify);
+		if ($notify eq "true" || $notify eq "yes") {
+			$str .= "--notify-switches=yes "
+		} elsif ($notify eq "false" || $notify eq "no") {
+			$str .= "--notify-switches=no "
+		}
+		$str .= "--standby-uplinks=$snics " if (length($snics) > 0);
+	}
+	dprintf(3,"str: %s\n", $str);
+	return $str;
+}
+
+sub set_policy($$) {
+	my $switch = shift(@_);
+	my $uplinks = shift(@_);
+	my $policy_str = get_policy_str($switch,$uplinks);
+	return if (!length($policy_str));
+	if ($version_val < verval('5.0.0')) {
+		emit(1,"vmware-vim-cmd hostsvc/net/vswitch_setpolicy $policy_str\"$switch->{name}\"");
+	} else {
+		emit(1,"esxcli network vswitch standard policy failover set $policy_str--vswitch-name=\"$switch->{name}\"");
+	}
+}
+
+sub set_pg_policy($$) {
+	my $switch = shift(@_);
+	my $pg = shift(@_);
+	my $uplinks = shift(@_);
+	my $pguplinks = $pg->{uplinks};
+#	dprintf(1,"pguplinks: %s\n", $pguplinks);
+	$pguplinks = "" unless($pguplinks);
+	$pguplinks = $uplinks if (!length($pguplinks));
+	my $pg_policy_str = get_policy_str($pg,$pguplinks);
+	return if (!length($pg_policy_str));
+	if ($version_val < verval('5.0.0')) {
+		emit(1,"vmware-vim-cmd hostsvc/net/portgroup_set $pg_policy_str\"$switch->{name}\" \"$pg->{name}\"");
+	} else {
+		emit(1,"esxcli network vswitch standard portgroup policy failover set --use-vswitch $pg_policy_str--portgroup-name=\"$pg->{name}\"");
+	}
+}
+
+#      <portgroup> <name>Trunked</name> <vlan>4095</vlan> <security><prom>true></prom></security> </portgroup>
+sub set_pg_security($$) {
+	my $switch = shift(@_);
+	my $pg = shift(@_);
+	my $oflag = "";
+	if ($pg->{security}->{prom}) {
+		if ($pg->{security}->{prom} eq "true") {
+			$oflag = "-o yes";
+		} else {
+			$oflag = "-o no";
+		}
+	}
+	emit(0,"esxcli network vswitch standard portgroup policy security set -p $pg->{name} $oflag");
+}
+
+sub get_dns {
+	# Convert name/ip address into fully qualified hostname
+	my $test = shift(@_);
+	my ($hostname,$ip);
+	if ( $test =~ /[a-zA-z]/ ) {
+		my($name,$aliases,$type,$len,$thataddr) = gethostbyname($test);
+		unless ( $name ) { return }
+		$hostname = $name;
+		my @ips = unpack('C4',$thataddr);
+		$ip =  sprintf("%d.%d.%d.%d",@ips);
+	} else {  # Itza IP address
+		# Do a quick reality check on IP address if passed
+		if ( $test =~ /\.$/ ) { return }    # no ending it in a .
+		my @data = split('\.',$test);
+		for (my $i=0; $i<=3; $i++) {
+			my $test = shift(@data);
+			if (( $test < 0 ) || ( $test > 255 )) { return }
+		}
+		if ( @data ) { return }             # It's just too much IP
+		$ip = $test;
+		$hostname = gethostbyaddr(inet_aton($ip),2);
+	}
+	return($hostname,$ip);
+}
+
+sub do_net {
+	end_state(1) if ($in_state);
+	begin_state;
+	$states{do_net} = $state;
+	begin_step("Configuring network");
+	emit(1,"esxcfg-vswitch -l");
+	my $used_hostip = 0;
+	my $switch_has_vmnic0 = 0;
+	my $switch_config = undef;
+	for my $swconfig ($config->{network}->{vswitch}) {
+#		printf("%s\n", ref($swconfig));
+#		print Dumper($swconfig);
+		for my $switch (@$swconfig) {
+			next unless(ref($switch));
+			# Create the vswitch
+			my $swname = $switch->{name};
+			$swname =~ s/\%SHORTHOST\%/$shorthost/;
+			dprintf(2,"vSwitch: %s\n", $swname);
+			my $ports = $switch->{ports};
+			$ports = "" unless($ports);
+			$ports = $NUMPORTS if (!length($ports));
+			del_portgroup($swname,"VM Network") if ($swname eq "vSwitch0");
+			add_vswitch($swname,$ports);
+
+			# Add the uplinks
+			my $uplinks = $switch->{uplinks};
+			dprintf(3,"uplinks: %s\n", $uplinks);
+			foreach my $nic (split(',',$uplinks)) {
+				my $vmnic="vmnic$nic";
+				add_uplink($vmnic,$swname);
+				$switch_has_vmnic0 = 1 if ($swname eq "vSwitch0" && $vmnic eq "vmnic0");
+			}
+
+			# Refresh
+			refresh_net;
+
+			# Set MTU if specified
+			$switch->{mtu} = "" unless($switch->{mtu});
+			set_mtu($swname,$switch->{mtu}) if (length($switch->{mtu}) > 0);
+
+			# Set policy, if necessary
+			set_policy($switch,$uplinks);
+
+			# Portgroups
+			my $pgconfig = $switch->{portgroup};
+			for my $pg (@$pgconfig) {
+				next unless(ref($pg));
+				# Create the portgroup
+				my $pgname = $pg->{name};
+				next if (!length($pgname));
+				$pgname =~ s/\%SHORTHOST\%/$shorthost/;
+				dprintf(2,"portgroup: %s\n", $pgname);
+				$pg->{create} = "" unless($pg->{create});
+				$pg->{create} = "true" if (!length($pg->{create}));
+				add_portgroup($pgname,$swname) if ($pg->{create} eq "true" and $pgname ne "Management Network");
+
+				# Set VLAN if specified
+				$pg->{vlan} = "" unless($pg->{vlan});
+				set_vlan($swname,$pgname,$pg->{vlan}) if (length($pg->{vlan}) > 0 and $pgname ne "Management Network");
+
+				set_pg_security($switch,$pg) if ($pg->{security});
+
+				# Set policy
+				set_pg_policy($switch,$pg);
+
+				# Add interfaces
+				my $ifconfig = $pg->{interface};
+#				print Dumper($ifconfig);
+				for my $if (@$ifconfig) {
+					next unless(ref($if));
+					my $ifname = $if->{name};
+					next if (!length($ifname));
+	
+					# If set to dhcp dont bother with callsub
+					$if->{type} = "" unless($if->{type});
+					if ($if->{type} =~ m/DHCP/i) {
+						add_vmknic($ifname,"dhcp",undef,undef,$pgname);
+					} else {
+#						print Dumper($if);
+						# If host specified, get info with callsub
+						my $host = $if->{host};
+						$host = "" unless($host);
+						dprintf(3,"+++host: %s\n", $host);
+						my ($ip,$netmask,$gateway);
+						if (length($host) > 0) {
+							$host =~ s/\%HOSTNAME\%/$hostname/;
+							$host =~ s/\%SHORTHOST\%/$shorthost/;
+							$host =~ s/\%HOSTIP\%/$hostip/;
+							if ($host =~ m/\%HOSTOCT\%/) {
+								my @pa = split('\.',$hostip);
+								$host =~ s/\%HOSTOCT\%/$pa[3]/;
+								dprintf(3,"NEW host: %s\n", $host);
+							}
+							# Does it have a plus in it?
+							if ($host =~ m/\+/) {
+								my @tmp = split('\+',$host);
+								my $pi = $tmp[0];
+								my $num = $tmp[1];
+								dprintf(3,"pi: %s, num: %s\n", $pi, $num);
+								my @pa = split('\.',$pi);
+								$pa[3] += $num;
+								$host = join('.',@pa);
+								dprintf(3,"NEW host: %s\n", $host);
+							}
+if (-x "/usr/local/bin/callsubx") {
+							$cmd = "/usr/local/bin/callsub -n -d $host > $tmpfile 2>&1";
+							dprintf(3,"cmd: %s\n", $cmd);
+							my $try = sprintf("%s",$cmd);
+							system($cmd);
+							open(IN,"<$tmpfile");
+							while(my $buf = <IN>) {
+								next if ($buf =~ /^#/);
+								chomp($buf);
+								next unless ($buf);
+								dprintf(2,"buf: %s\n", $buf);
+								last if ($buf =~ /Error:/);
+								my @tmp = split(': ',$buf);
+								my $count = @tmp;
+								dprintf(2,"count: %d\n", $count);
+								if ($count > 1) {
+									$ip = $tmp[1] if ($buf =~ m/IP:/);
+									$netmask = $tmp[1] if ($buf =~ m/Subnet:/);
+									$gateway = $tmp[1] if ($buf =~ m/Gateway:/);
+								}
+							}
+							close(IN);
+							unlink($tmpfile);
+} else {
+							my($name,$aliases,$type,$len,$thataddr) = gethostbyname($host);
+							unless ($name) {
+								dprintf(3,"name is empty!\n");
+								$ip = "";
+							} else {
+								my @ips = unpack('C4',$thataddr);
+								$ip =  sprintf("%d.%d.%d.%d",@ips);
+								dprintf(3,"ip: %s\n",$ip);
+							}
+}
+							$ip = "" unless($ip);
+							if (!length($ip) && $host =~ /-ci$|-hb$|-use10$|-private$/ && !$used_hostip) {
+								my @ia = split('\.',$hostip);
+								my @pa = split('\.',$use_prefix);
+								$ia[0] = $pa[0] if defined($pa[0]);
+								$ia[1] = $pa[1] if defined($pa[1]);
+								$ia[2] = $pa[2] if defined($pa[2]);
+								$ia[3] = $pa[3] if defined($pa[3]);
+								$ip = join('.',@ia);
+								$used_hostip = 1;
+							}
+							$netmask = "255.255.255.0";
+							$gateway = $ip;
+						} else {
+							$ip = $if->{ip};
+							$netmask = $if->{netmask};
+							$gateway = $if->{gateway};
+						}
+						$ip = "" unless($ip);
+						$netmask = "" unless($netmask);
+						$gateway = "" unless($gateway);
+						dprintf(2,"ip: %s, netmask: %s, gateway: %s\n",$ip,$netmask,$gateway);
+#						next if (!length($ip));
+						if (length($ip)) {
+						add_vmknic($ifname,"static",$ip,$netmask,$pgname) if (($ifname eq "vmk0" and $os eq "ESXi") ==0 );
+# XXX vmware automatically does this
+if (0) {
+  						my (@nw,@bc) ;
+  						my @ips = split('\.',$ip);
+						my @nms = split('\.',$netmask); 
+						for my $i ( 0..3 ) {
+							# subnet is ip AND'ed with netmask
+							$nw[$i] = (0+$ips[$i]) & (0+$nms[$i]);
+							# broadcast is ip OR'ed with inverse of netmask
+							$bc[$i] = ($ips[$i] | (~ $nms[$i])) & 255;
+						}
+						my $nw = join('.',@nw);
+						my $bc = join('.',@bc);
+						add_route($nw,$netmask,$gateway);
+						}
+}
+					}
+
+					# Set MTU if specified
+					$if->{mtu} = "" unless($if->{mtu});
+					set_if_mtu($pgname,$ifname,$if->{mtu}) if (length($if->{mtu}) > 0);
+
+					# Mark as managenment
+#					$if->{management} = "" unless($if->{management});
+#					if ($if->{management} eq "true" || $if->{management} eq "yes") {
+#						emit(1,"vmware-vim-cmd hostsvc/advopt/update Net.ManagementIface string $ifname");
+#					}
+
+					# Mark as vmotion
+					$if->{vmotion} = "" unless($if->{vmotion});
+					if ($if->{vmotion} eq "true" || $if->{vmotion} eq "yes") {
+						emit(1,"vmware-vim-cmd /hostsvc/vmotion/vnic_set $ifname");
+					}
+				}
+			}
+#			dprintf(3,"swname: %s, switch_config: %s\n", $swname, ref $switch_config);
+			if ($swname eq "vSwitch0") {
+				emit(1,"vmware-vim-cmd hostsvc/net/vswitch_setnumports vSwitch0 $ports");
+				if ($switch_has_vmnic0 == 0) {
+					remove_uplink("vmnic0","vSwitch0");
+					$switch_config = $switch;
+				} elsif ($version_val >= verval('5.1.0')) {
+					refresh_net;
+					set_policy($switch,$switch->{uplinks});
+				}
+			} elsif (defined $switch_config) {
+				set_policy($switch_config,$switch_config->{uplinks});
+				$switch_config = undef;
+			}
+			refresh_net;
+		}
+	}
+
+	# Refresh
+	refresh_net;
+	emit(1,"esxcfg-vswitch -l");
+	unlink($tmpfile);
+	emit(0,"test \"\$1\" = \"net\" && break\n");
+	end_state(1);
+}
+
+# Call esxpost to join us to VC
+sub do_joinvc {
+	# If cluster != NONE, joinvc
+	dprintf(1,"cluster: %s\n", $cluster);
+	if ($cluster !~ /^NONE$/i) {
+		end_state(1) if ($in_state);
+		begin_state;
+		$states{do_joinvc} = $state;
+		begin_step("Calling esxpost to join us to VC");
+		# XXX you CANNOT log an assignment statement
+		emit(0,"cat > $bindir/joinvc << EOF");
+#		if ($version_val >= verval('5.0.0')) {
+		  printf("test -f /etc/vmware/ssl/rui.crt && \\\n");
+		  printf("key=\`openssl x509 -sha1 -in /etc/vmware/ssl/rui.crt -noout -fingerprint 2>/dev/null | grep -i finger | awk -F= '{ print \$2 }'\`\n");
+		  printf("wget -q \"http://\$way/cgi-bin/esxpost?host=$hostname&key=\\\$key\" -O -\n");
+#		} else {
+#		  printf("wget -q \"http://\$way/cgi-bin/esxpost?host=$hostname\" -O -\n");
+#		}
+		printf("EOF\n");
+		emit(0,"sh -x $bindir/joinvc > $logdir/joinvc.log 2>&1");
+		emit(0,"test \"\$1\" = \"joinvc\" && break\n");
+		emit(0,"error_text=\"`tail -n 5 $logdir/joinvc.log | grep ^error:`\"");
+		emit(0,"if test -n \"\$error_text\"; then");
+		emit(0,"	logit Warn \"joinvc: \$error_text\"");
+#		emit(1,"	echo 99\$state > \$state_file");
+#		emit(1,"	continue");
+		emit(0,"fi");
+		if ($options{do_mkvols}) {
+			emit(0,"if test \`tail -n 5 $logdir/joinvc.log | grep -c \"$makeflag\"\` -gt 0; then");
+			emit(0,"	logit Info \"Creating datastores...\"");
+			emit(1,"	mkvols");
+			emit(0,"fi");
+		}
+		emit(0,"test \"\$1\" = \"joinvc\" && break\n");
+		end_state(1);
+	}
+}
+
+# Save logs to local & backup config
+sub do_save {
+	if ($os eq "ESXi") {
+		begin_step("Saving logs and backing up config");
+#		emit(0,"if test -f \$localvol; then");
+#		emit(0,"  savedir=/vmfs/volumes/\$localvol/install_logs");
+#		emit(0,"  rm -rf \$savedir; mkdir -p \$savedir");
+#		emit(0,"  for log in /var/log/hostd.log /var/log/esxi_install.log /var/log/license.log /var/log/esxpost.log");
+#		emit(0,"  do");
+#		emit(0,"    test -f \$log && cp \$log \$savedir");
+#		emit(0,"  done");
+#		emit(0,"fi");
+		emit(1,"/sbin/auto-backup.sh");
+		end_step;
+	}
+}
+
+sub do_reboot {
+	begin_step("Rebooting");
+	emit(0,"do_reboot");
+	emit(0,"break");
+	end_state(0);
+}
+
+sub do_vsm {
+	if ($os eq "ESX") {
+		begin_step("Loading user accounts from VSM");
+		if ($version_val < verval('4.0.0')) {
+			emit(1,"apt-get -y -f install");
+			for my $pkg (qw(vsm_client_user_group linux_users_dc_incfls-linux linux_users_dc_storage_dp_eng-lnx linux_users_hpit_level3 sudo-config)) {
+				emit(1,"apt-get -q --assume-yes install $pkg");
+			}
+		}
+		emit(0,"/usr/local/bin/vsm_client_group_review.sh >> /var/log/vsm.log 2>&1");
+		emit(1,"vmware-vim-cmd vimsvc/auth/entity_permission_add vim.Folder:ha-folder-root 'users' true Admin true");
+		end_step;
+	}
+}
+
+sub do_ram {
+	begin_step("Setting console memory to 800MB");
+	emit(1,"vmware-vim-cmd hostsvc/memoryinfo 838860800");
+	end_step;
+}
+
+sub do_pass {
+	begin_step("Setting root password");
+	my $enc_pass = `/usr/local/bin/vim_cred -e -s $hostname -u root`;
+	chomp($enc_pass);
+	if ($os eq "ESX") {
+		emit(1,"echo 'root:$enc_pass' | chpasswd -e");
+	} else {
+		emit(0,"passwd -d root > /dev/null 2>&1");
+		emit(1,"sed -i -e 's|root::|root:$enc_pass:|' /etc/shadow");
+	}
+	end_step;
+}
+
+sub do_unmm {
+	begin_step("Exiting Maintenance Mode");
+	emit(1,"vmware-vim-cmd hostsvc/maintenance_mode_exit");
+	emit(1,"vmware-vim-cmd hostsvc/net/refresh");
+	end_step;
+}
+
+sub do_vmcons {
+	if ($version_val < verval('4.0.0')) {
+		begin_step("Fixing VM console access");
+		emit(0,"echo 'vmauthd.server.alwaysProxy = \"TRUE\"' >>/etc/vmware/config");
+		end_step;
+	}
+}
+
+sub do_rootssh {
+	begin_step("Enabling root ssh login");
+	emit(1,"sed -i -e 's:^PermitRootLogin no:PermitRootLogin yes:' /etc/ssh/sshd_config");
+	emit(1,"/etc/init.d/sshd restart");
+	end_step;
+}
+
+sub do_patch {
+	my $patches = $LIBDIR . "/patches";
+	open(IN,"$patches");
+#	dprintf(1,"version: %s, build: %s, model: %s\n", $version, $build, $model);
+	while(my $buf = <IN>) {
+		next if ($buf =~ /^#/);
+		chomp($buf);
+		next unless ($buf);
+		dprintf(3,"buf: %s\n", $buf);
+		#version,build,model,patch,profile
+                my @fields = split(',',$buf);
+                foreach my $field (@fields) {$field = '.*' if (!length($field))};
+                my ($dexp,$cexp,$hexp,$vexp,$bexp,$mexp,$patch,$profile) = @fields;
+		$bexp = 999999999999 if ($bexp eq ".*");
+#		dprintf(3,"dexp: %s, cexp: %s, hexp: %s, vexp: %s, bexp: %s, mexp: %s, patch: %s, profile: %s\n",
+#			$dexp,$cexp,$hexp,$vexp,$bexp,$mexp,$patch,$profile);
+		dprintf(5,"dc: $dc, dexp: $dexp\n");
+		next if ($dc !~ /$dexp/);
+		dprintf(3,"dc matched.\n");
+		dprintf(5,"cluster: $cluster, cexp: $cexp\n");
+		next if ($cluster !~ /$cexp/);
+		dprintf(3,"cluster matched.\n");
+		dprintf(5,"hostname: $hostname, hexp: $hexp\n");
+		next if ($hostname !~ /$hexp/);
+		dprintf(3,"hostname matched.\n");
+		dprintf(5,"version: $version, vexp: $vexp\n");
+		next if ($version !~ /$vexp/);
+		dprintf(3,"version matched.\n");
+		dprintf(5,"build: $build, bexp: $bexp\n");
+		next if ($build >= $bexp);
+		dprintf(3,"build matched\n");
+		dprintf(5,"model: $model, mexp: $mexp\n");
+		next if ($model !~ /$mexp/);
+		dprintf(3,"model matched\n");
+		if (!$in_step) {
+			end_state(1) if ($in_state);
+			begin_state;
+			$states{do_patch} = $state;
+			begin_step("");
+		}
+		emit(0,"logit Info \"Installing patch: $patch\"");
+		emit(0,"file=\`ls $patchpath/$patch | head -1\`");
+		emit(0,'if test ! -f "$file"; then');
+		$level++;
+		emit(0,'logit Fail "ERROR: patch file not found!"');
+		emit(0,'echo 99$state > $state_file');
+		emit(0,"break");
+		$level--;
+		emit(0,"fi");
+		if ($version_val > verval('5.0.0')) {
+			if ($patch =~ m/.vib$/) {
+				emit(1,'esxcli software vib install --no-sig-check -v "$file" -f');
+			} else {
+				$profile = '' unless($profile);
+				if (length($profile) > 0) {
+					emit(1,'esxcli software profile update -d "$file" -p "'.$profile.'"');
+				} else {
+					emit(1,'esxcli software vib update -d "$file"');
+				}
+			}
+			emit(0,"do_reboot=1");
+		} else {
+			$cmd = "esxupdate ";
+			if ($version =~ /^3\.[0-9]/) {
+				$cmd .= "-b '*' -n --nosigcheck -d ";
+			} else {
+				$cmd .= "--bundle=";
+			}
+			$cmd .= "\$file update >> " . $logdir . "/patches.log 2>&1";
+			emit(1,$cmd);
+			emit(0,"do_reboot=1");
+		}
+		emit(0,"sleep 10");
+	}
+	close(IN);
+	if ($in_step) {
+#		emit(0,"test \"\$1\" = \"patch\" && break");
+		emit(0,"if test \"\$1\" = \"patch\"; then");
+		$level++;
+		emit(0,"if test \$do_reboot -eq 1; then");
+		$level++;
+		emit(0,"logit Info \"Rebooting\"");
+		emit(0,"do_reboot");
+		$level--;
+		emit(0,"fi");
+		emit(0,"break");
+		$level--;
+		emit(0,"fi");
+		end_state(1);
+	}
+}
+
+sub do_psp {
+	if ($os eq "ESX") {
+		if ($version_val < verval('4.0.0')) {
+			begin_step("Installing PSP");
+			emit(1,"apt-get -q --assume-yes install hpmgmt");
+			emit(1,"apt-get -q --assume-yes install psp_config_dcc_esx");
+			emit(0,"cd /root/hpmgmt && ./install-psp.sh --silent --inputfile hpmgmt.conf > /var/log/LinuxCOE-PSP-inst.log 2>&1");
+			emit(0,"apt-get -q --assume-yes install hpit-SIMcerts > /var/log/LinuxCOE-SIM-inst.log 2>&1");
+		} else {
+			begin_step("Installing HP Mgmt Agents (aka PSP)...");
+			emit(0,"cd /root/hpmgmt && ./install-psp.sh --silent --inputfile hpmgmt.conf > /var/log/LinuxCOE-PSP-inst.log 2>&1");
+			emit(0,"yum -y install hpit-SIMcerts hpit-snmpconfig > /var/log/LinuxCOE-SIM-inst.log 2>&1");
+		}
+		end_step;
+	}
+}
+
+sub do_firmware {
+	# XXX DONT do firmware on DL585 G5
+	if ($os eq "ESX" && $model !~ /DL585.*G5/) {
+		if ($version_val < verval('4.0.0')) {
+			begin_step("Installing firmware");
+			emit(1,"apt-get -q --assume-yes install hpit-fwupdater");
+		} elsif ($version_val < verval('5.0.0')) {
+			begin_step("Installing firmware");
+			emit(1,"yum -y install hpit-fwupdater");
+		}
+		end_step;
+	}
+}
+
+sub do_nas {
+	end_state(1) if ($in_state);
+	begin_state;
+	$states{do_nas} = $state;
+	begin_step("") if (defined($config->{nas}));
+	for my $nconfig ($config->{nas}) {
+	    for my $nas (@$nconfig) {
+		dprintf(4,"nas: %s\n", ref $nas);
+		for my $vol ($nas->{volume}) {
+			dprintf(4,"vol: %s\n", ref $vol);
+			if (ref $vol eq 'ARRAY') {
+				for $info (@$vol) {
+					dprintf(3,"info: %s\n", ref $info);
+					my $name = $info->{name};
+					my $host = $info->{host};
+					my $share = $info->{share};
+					emit(0,"logit Info \"Mounting NAS volume: $name\"");
+					emit(0,"esxcfg-nas -d $name > /dev/null 2>&1");
+					emit(1,"esxcfg-nas -a -o $host -s $share $name");
+				}
+			}
+		}
+	    }
+	}
+	emit(0,"test \"\$1\" = \"nas\" && break\n");
+	end_state(1);
+}
+
+sub do_opts {
+	for my $opt ($config->{opts}) {
+		dprintf(4,"opt: %s\n", ref $opt);
+#		print Dumper($opt);
+		for my $option ($opt->{option}) {
+			dprintf(4,"option: %s\n", ref $option);
+			if (ref $option eq 'ARRAY') {
+				for $info (@$option) {
+					begin_step("") if (!$in_step);
+					dprintf(4,"info: %s\n", ref $info);
+					my $name = $info->{name};
+					my $type = $info->{type};
+					my $value = $info->{value};
+					emit(0,"logit Info \"Setting option: $name $type $value\"");
+					emit(1,"vmware-vim-cmd hostsvc/advopt/update $name $type $value");
+				}
+			}
+		}
+	}
+	end_step;
+}
+
+sub do_iscsi {
+	my $first = 1;
+	for my $iconfig ($config->{iscsi}) {
+	    for my $iscsi (@$iconfig) {
+		dprintf(4,"iscsi: %s\n", ref $iscsi);
+		if (ref $iscsi eq 'ARRAY') {
+			emit(0,"ISCSI IS ARRAY");
+		} 
+		for my $target ($iscsi->{target}) {
+			dprintf(4,"target: %s\n", ref $target);
+			if (ref $target eq 'ARRAY') {
+				emit(0,"TARGET IS ARAAY");
+			}
+			if ($first) {
+				end_state(1) if ($in_state);
+				begin_state;
+				$states{do_iscsi} = $state;
+				begin_step("") if (defined($config->{iscsi}));
+				emit(0,"logit Info \"Enabling Software iSCSI...\"");
+				emit(0,"esxcli iscsi software set -e true");
+			}
+			emit(0,"hba=\$(esxcli iscsi adapter list | grep ^vmhba | head -1 | awk '{ print \$1 }')");
+			emit(0,'if test -z $hba; then');
+			$level++;
+			emit(0,'logit warn "WARNING: unable to find iSCSI HBA!"');
+			$level--;
+			emit(0,"else");
+			$level++;
+			if ($first) {
+				emit(0,"for nic in \$(esxcli iscsi networkportal list | grep Vmknic: | awk '{ print \$NF }'); do esxcli iscsi networkportal remove -f yes -A \$hba -n \$nic; done");
+				emit(0,"esxcli iscsi networkportal add -A \$hba -n vmk0");
+				$first = 0;
+			}
+			$target .= ":3260" unless ($target =~ m/:/);
+			emit(0,"logit Info \"Adding iSCSI target: $target\"");
+			emit(0,"esxcli iscsi adapter discovery sendtarget add -A \$hba -a $target");
+			emit(0,"esxcli iscsi adapter discovery rediscover -A \$hba");
+			$level--;
+			emit(0,"fi");
+		}
+	    }
+	}
+	if ($first == 0) {
+		emit(0,"sleep 10");
+		emit(0,"esxcli storage core adapter rescan --adapter \$hba");
+		emit(0,"test \"\$1\" = \"iscsi\" && break\n");
+		end_state(1);
+	}
+}

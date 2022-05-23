@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<domain type='vmware'>
+  <name>test3</name>
+  <uuid></uuid>
+  <memory unit='KiB'>4194304</memory>
+  <currentMemory unit='KiB'>4194304</currentMemory>
+  <vcpu placement='static'>2</vcpu>
+  <cputune>
+    <shares>2000</shares>
+  </cputune>
+  <os>
+    <type arch='i686'>hvm</type>
+  </os>
+  <clock offset='utc'/>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>destroy</on_crash>
+  <devices>
+    <disk type='file' device='disk'>
+      <source file='[Misc12-vsan1] test3/test3.vmdk'/>
+      <target dev='sda' bus='scsi'/>
+      <address type='drive' controller='0' bus='0' target='0' unit='0'/>
+    </disk>
+    <controller type='scsi' index='0' model='lsisas1068'/>
+    <interface type='bridge'>
+      <source bridge='10.129.167.x'/>
+      <model type='e1000'/>
+    </interface>
+    <video>
+      <model type='vmvga' vram='4096'/>
+    </video>
+  </devices>
+</domain>
+

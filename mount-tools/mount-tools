@@ -1,0 +1,16 @@
+#!/usr/bin/perl
+use strict;
+use CGI;
+
+my $debug = 1;
+
+sub dprintf { my $level = shift; printf(@_) if ($debug >= $level); }
+
+my $q = new CGI;
+print $q->header();
+
+my $name = $q->param('name');
+$name = "steve-test" unless($name);
+dprintf(1,"name: %s\n", $name);
+
+exit 0;

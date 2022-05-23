@@ -1,0 +1,2 @@
+DROP VIEW IF EXISTS host_datastore_vw;
+CREATE VIEW host_datastore_vw AS SELECT hosts.id AS host_id, hosts.name AS host, datastores.id AS datastore_id, datastores.name AS datastore, datastores.blocksize AS blocksize, datastores.total AS total, datastores.free AS free from hosts join datastores,host_datastore where (host_datastore.host_id = hosts.id) and (host_datastore.datastore_id = datastores.id);

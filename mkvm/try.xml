@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+ <Reconfigure-Virtual-Machine>
+  <Name>esx-test</Name>
+  <Host>vm-misc12-7a.uson.usoncology.int</Host>
+  <PowerOn-Flag>
+   <CD-DVD-Drive>
+    <Name>CD/DVD drive 1</Name>
+    <PowerOn>True</PowerOn>
+   </CD-DVD-Drive>
+  </PowerOn-Flag>
+ </Reconfigure-Virtual-Machine>

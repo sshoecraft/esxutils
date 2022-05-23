@@ -1,0 +1,17 @@
+#!/bin/bash
+#
+SIZE=1472
+#
+let c=0
+results=""
+while test -n "$1"
+do
+	ip=$1; shift
+	/usr/sbin/vmkping -W 2 -c 2 $ip > /dev/null 2>&1
+	status=$?
+	test $status -ne 0 && status=1
+	test $c -gt 0 && results="$results,"
+	results="$results$status"
+	c=1
+done
+echo "results: $results"

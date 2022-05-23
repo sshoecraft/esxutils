@@ -1,0 +1,21 @@
+<config>
+	<name>+NAME+</name>
+	<datacenter>DDC</datacenter>
+	<computepath>DDC-UAT</computepath>
+	<memorySizeMB>+MEM+</memorySizeMB>
+	<numCpu>+VCPU+</numCpu>
+	<disks>
+		<disk>
+			<size>+SIZE+</size>
+			<thin>0</thin>
+		</disk>
+	</disks>
+	<nics>
+		<nic>
+			<type>vmxnet3</type>
+			<network>DDC-VM-10.5.208</network>
+		</nic>
+	</nics>
+	<guestId>rhel6_64Guest</guestId>
+	<annotation>+ANN+</annotation>
+</config>

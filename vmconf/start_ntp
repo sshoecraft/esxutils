@@ -1,0 +1,20 @@
+#!/bin/bash
+
+TOOLS=/usr/local/lib/tools
+DESTDIR=/var/tmp
+
+SCRIPT=do_ntp
+
+VM=$1
+if test -z "$VM"; then
+        echo "usage: config_ntp <system name>"
+        exit 1
+fi
+
+/usr/local/bin/timeout 120 $TOOLS/admssh $VM "sudo rm -f $DESTDIR/$SCRIPT" > /dev/null 2>&1
+/usr/local/bin/timeout 600 $TOOLS/admscp $TOOLS/$SCRIPT $VM:$DESTDIR
+if test $? -ne 0; then
+	echo "ERROR: unable to copy $TOOLS/$SCRIPT to $VM:$DESTDIR!"
+	exit 1
+fi
+/usr/local/bin/timeout 300 $TOOLS/admssh $VM "sudo su - root -c \"sh $DESTDIR/$SCRIPT; rm -f $DESTDIR/$SCRIPT\""

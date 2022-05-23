@@ -1,0 +1,24 @@
+#!/bin/bash
+test -z "$1" && exit 1
+tmp1=/tmp/farmuse1.$$
+tmp2=/tmp/farmuse2.$$
+trap '{ rm -f $tmp1 $tmp2; }' EXIT
+/usr/local/bin/farminfo -x -v -n "$1" > $tmp1
+if test `cat $tmp1 | grep -c "not found"` -gt 0; then
+	cat $tmp1
+	exit 1
+fi
+doit() {
+while read n
+do
+        vminfo -c -n -m "$n"
+done < $tmp1
+}
+doit > $tmp2
+cpu=`cat $tmp2 | awk -F, '{ print $4 }' | paste -sd+ - | bc`
+tmem=`cat $tmp2 | awk -F, '{ print $5 }' | paste -sd+ - | bc`
+mem=`echo "$tmem 1024 / p" | dc`
+disk=`cat $tmp2 | awk -F, '{ print $6 }' | paste -sd+ - | bc`
+#tdisk=`cat $tmp2 | awk -F, '{ print $6 }' | paste -sd+ - | bc`
+#disk=`echo "$tdisk 1024 / p" | dc`
+echo "CPU: $cpu, MEM: $mem, DISK: $disk"

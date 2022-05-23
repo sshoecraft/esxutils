@@ -1,0 +1,212 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Data::Dumper;
+use VMware::VIRuntime;
+use Term::ANSIColor;
+
+use lib qw (/usr/local/lib/perl);
+use utils;
+
+$debug = 0;
+
+my $name = $ARGV[0];
+#$name = "c7-64";
+exit 0 unless($name);
+dprintf(0,"VM name: %s\n", $name);
+
+my $guestId = $ARGV[1];
+#$guestId = "c7-64";
+exit 0 unless($guestId);
+dprintf(0,"guestId: %s\n", $guestId);
+
+my $server = $ARGV[2];
+$server = 'usodplvvc001' unless($server);
+dprintf(3,"server: %s\n", $server);
+
+my ($dnsname,$aliases,$addrtype,$length,@addrs) = gethostbyname($server);
+unless($dnsname) {
+	printf("error: unable to resolve: %s\n", $server);
+	exit(1);
+} else {
+	$server = $dnsname;
+	dprintf(3,"NEW server: %s\n", $server);
+}
+dprintf(0,"VMware server: %s\n", $server);
+
+# Get user and pass
+my $user = `cat /usr/local/etc/.vim  | grep "^$server" | head -1 | awk '{ print \$2 }'`;
+chomp($user);
+$user = "" unless($user);
+if (!length($user)) {
+	printf("error: unable to find user for server, aborting\n");
+	exit(1);
+}
+my $pass = `/usr/local/bin/vim_cred -g -x -s '$server' -u '$user'`;
+chomp($pass);
+dprintf(3,"user: %s, pass: %s\n", $user, $pass);
+
+dprintf(0,"Connecting to server...\n");
+$ENV{'VI_PROTOCOL'} = 'https';
+$ENV{'VI_SERVER'} = $server;
+$ENV{'VI_SERVICEPATH'} = '/sdk';
+$ENV{'VI_USERNAME'} = $user;
+$ENV{'VI_PASSWORD'} = $pass;
+Opts::parse();
+#Opts::validate();
+dprintf(3,"Connecting...\n");
+Util::connect();
+
+# Get VM
+dprintf(0,"Gathering info...\n");
+my $vm = Vim::find_entity_view( view_type => 'VirtualMachine', filter => { 'name' => qr/$name/i });
+unless($vm) {
+	printf("error: unable to find vm in inventory!\n");
+	exit(1);
+}
+#print Dumper($vm);
+
+# Turn the version into a value
+sub verval {
+	my ($vstr) = @_;
+	my $val = 0;
+
+	dprintf(3,"verval: vstr: %s\n", $vstr);
+	my @vals = split('\.',$vstr);
+	foreach my $d (@vals) {
+		$val <<= 8;
+		$d = 0 unless($d =~ /^[+-]?\d+$/);
+		$val |= $d;
+		dprintf(5,"verval: val: %x, item: %d\n", $val, $d);
+	}
+	dprintf(3,"verval: returning: %d\n", $val);
+	return $val;
+}
+
+my $host = Vim::get_view(mo_ref => $vm->summary->runtime->host);
+#print Dumper($host);
+dprintf(2,"host apiVersion: %s \n", $host->config->product->apiVersion);
+my $host_verval = verval($host->config->product->apiVersion);
+dprintf(2,"host verval: %s\n", $host_verval);
+
+sub getStatus {
+        my ($taskRef,$message) = @_;
+
+        my $task_view = Vim::get_view(mo_ref => $taskRef);
+#        my $taskinfo = $task_view->info->state->val;
+        my $continue = 1;
+        while ($continue) {
+                my $info = $task_view->info;
+                if ($info->state->val eq 'success') {
+#                        print $message,"\n";
+                        return $info->result;
+                        $continue = 0;
+                } elsif ($info->state->val eq 'error') {
+                        my $soap_fault = SoapFault->new;
+                        $soap_fault->name($info->error->fault);
+                        $soap_fault->detail($info->error->fault);
+                        $soap_fault->fault_string($info->error->localizedMessage);
+                        die "$soap_fault\n";
+                }
+                sleep 2;
+                $task_view->ViewBase::update_view_data();
+        }
+}
+
+# 4. Upgrade VM HW
+eval { $vm->UpgradeVM(); };
+
+# 5. Make cores = sockets
+dprintf(1,"numCPU: %s, numCoresPerSocket: %s\n", $vm->config->{hardware}->{numCPU}, $vm->config->{hardware}->{numCoresPerSocket});
+if ($vm->config->{hardware}->{numCoresPerSocket} != $vm->config->{hardware}->{numCPU}) {
+	my $spec = VirtualMachineConfigSpec->new(numCoresPerSocket => $vm->config->{hardware}->{numCPU});
+	eval {
+		my $task = $vm->ReconfigVM_Task(spec => $spec);
+		getStatus($task,$vm->{name} . ": CPU reconfig successful");
+	};
+}
+
+# IF < 9 vcpu
+if ($vm->config->{hardware}->{numCPU} < 9) {
+	# 4. CPU Hot-add (ignore error)
+	if (!$vm->config->hardware->{cpuHotAddEnabled}) {
+		dprintf(0,"Enabling CPU hotplug...\n");
+		my $spec = VirtualMachineConfigSpec->new(cpuHotAddEnabled => 'true');
+		eval {
+			my $task = $vm->ReconfigVM_Task(spec => $spec);
+			getStatus($task,$vm->{name} . ": CPU reconfig successful");
+		};
+	}
+}
+
+# 5. Mem Hot-add (ignore error)
+dprintf(0,"Enabling Memory hotplug...\n");
+if (!$vm->config->hardware->{memoryHotAddEnabled}) {
+	eval {
+		my $spec = VirtualMachineConfigSpec->new(memoryHotAddEnabled => 'true');
+		my $task = $vm->ReconfigVM_Task(spec => $spec);
+		getStatus($task,$vm->{name} . ": Memory reconfig successful");
+	};
+}
+
+# 6. Set tools upgrade policy
+dprintf(0,"Setting tools upgrade policy...\n");
+#		toolsUpgradePolicy => 'upgradeAtPowerCycle',
+eval {
+	my $toolsConfig = ToolsConfigInfo->new(
+		afterPowerOn => 'true',
+		afterResume => 'true',
+		beforeGuestStandby => 'true',
+		beforeGuestShutdown => 'true',
+		toolsUpgradePolicy => 'manual',
+		syncTimeWithHost => 'false',
+	);
+	my $spec = VirtualMachineConfigSpec->new(tools => $toolsConfig);
+	my $task = $vm->ReconfigVM_Task(spec => $spec);
+	getStatus($task,$vm->{name} . ": Tools policy reconfig successful");
+};
+
+dprintf(0,"Setting guestID...\n");
+my $vmSpec = VirtualMachineConfigSpec->new;
+
+	if ($host_verval >= verval('6.5')) {
+		if ($guestId eq "c6-32") {
+			$vmSpec->{guestId} = "centos6Guest";
+		} elsif ($guestId eq "c6-64") {
+			$vmSpec->{guestId} = "centos6_64Guest";
+		} elsif ($guestId eq "c7-64") {
+			$vmSpec->{guestId} = "centos7_64Guest";
+		} elsif ($guestId eq "ol6-32") {
+			$vmSpec->{guestId} = "oracleLinux6Guest";
+		} elsif ($guestId eq "ol6-64") {
+			$vmSpec->{guestId} = "oracleLinux6_64Guest";
+		} elsif ($guestId eq "ol7-64") {
+			$vmSpec->{guestId} = "oracleLinux7_64Guest";
+		} elsif ($guestId eq "2016") {
+			$vmSpec->{guestId} = "windows9Server64Guest";
+		}
+	} 
+	if ($host_verval >= verval('5.5')) {
+		if ($guestId eq "rh5-32") {
+			$vmSpec->{guestId} = "rhel5Guest";
+		} elsif ($guestId eq "rh5-64") {
+			$vmSpec->{guestId} = "rhel5_64Guest";
+		} elsif ($guestId eq "rh6-32") {
+			$vmSpec->{guestId} = "rhel6Guest";
+		} elsif ($guestId eq "rh6-64") {
+			$vmSpec->{guestId} = "rhel6_64Guest";
+		} elsif ($guestId eq "rh7-64") {
+			$vmSpec->{guestId} = "rhel7_64Guest";
+		} elsif ($guestId eq "02R2") {
+			$vmSpec->{guestId} = "windows7Server64Guest";
+		} elsif ($guestId eq "2012") {
+			$vmSpec->{guestId} = "windows8Server64Guest";
+		}
+	}
+	if (defined($vmSpec->{guestId})) {
+		dprintf(2,"NEW guestId: %s\n", $vmSpec->{guestId});
+		my $task = $vm->ReconfigVM_Task(spec => $vmSpec);
+		getStatus($task,$vm->{name} . ": Tools policy reconfig successful");
+	}
+
+Util::disconnect();

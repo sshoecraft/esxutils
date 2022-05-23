@@ -1,0 +1,128 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use DBI;
+
+my $esxconf = "/usr/local/bin/esxconf";
+my $dbh = DBI->connect('DBI:mysql:sysadm','sysadm_ro') or die "Couldn't connect to database: " . DBI->errstr;
+my $selesx = $dbh->prepare("SELECT CI_NM FROM ci_vw WHERE (CI_NM REGEXP '[d|g][0-9]t[0-9][0-9][0-9][0-9]h\.' OR CI_NM REGEXP 's[0-9][0-9]t[0-9][0-9][0-9][0-9]h\.') ORDER BY CI_NM");
+my $sel = $dbh->prepare("SELECT CI_NM,HP_CI_STAT_DN FROM ci_vw WHERE CI_NM = ?");
+my $home = $ENV{ HOME };
+my $vcservers = "$home/etc/vcservers";
+my $addhosts = "$home/etc/mklists.d";
+my $esxservers = "$home/etc/esxservers";
+my $ngdcservers = "$home/etc/ngdcesxservers";
+my $esxmon = "$home/etc/esxmon_servers";
+my $tmp = "/tmp/mklists.tmp";
+my $tmp2 = "/tmp/mklists2.tmp";
+my $tmp3 = "/tmp/mklists3.tmp";
+my $cmd;
+my $check_cmdb = 0;
+
+sub msg {
+        my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+        printf("%02d/%02d/%4d %02d:%02d:%02d %s\n",$mon+1,$mday,$year+1900,$hour,$min,$sec,join(' ',@_));
+}
+
+msg("starting");
+
+my (%servers,$user,$user_cmd);
+
+# Process VC servers
+open(INPUT, $vcservers) or die("couldnt open " . $vcservers);
+while (<INPUT>) {
+        chomp($_);
+        my $c = substr($_,0,1);
+        next if ($c eq "#");
+        my ($version,$cluster,$host,$server,$user) = split(',',$_);
+#       printf("server: %s, user: %s\n", $server, $user);
+        $servers{$server} = $user;
+}
+close(INPUT);
+
+for (keys %servers) {
+#       print "server: $_, user: $servers{$_}\n";
+	$user = $servers{$_};
+#	$user =~ s/\\/\\\\\\/;
+	unless($user) {
+		$user_cmd = "";
+	} else {
+		$user_cmd = "-u \'$user\'";
+	}
+	$cmd = "$esxconf -s $_ $user_cmd -t HostSystem name 2>/dev/null | grep name | sort -u | awk '{ print \$2 }' >> $tmp";
+	printf("%s\n", $cmd);
+	system($cmd);
+#	last;
+}
+
+# Add surgient hosts
+if (-d $addhosts) {
+	$cmd = "cat $addhosts/* >> $tmp";
+	printf("%s\n", $cmd);
+	system($cmd);
+}
+
+# Add CMDB hosts
+if (0) {
+open(OUT, ">>$tmp") or die("couldnt append to " . $tmp);
+$selesx->execute() or die;
+if ($selesx->rows > 0) {
+	while (my $ci_nm = $selesx->fetchrow) {
+		printf(OUT "%s\n", $ci_nm);
+	}
+}
+close(OUT);
+}
+
+# Make sure all hosts are in CMDB and in build|release|active status
+open(INPUT, "cat $tmp | sort -u |") or die("couldnt open " . $tmp);
+open(OUT, ">$tmp2") or die("couldnt open " . $tmp2);
+open(MTMP, ">$tmp3") or die("couldnt open " . $tmp3);
+while (<INPUT>) {
+	chomp($_);
+#	printf("line: %s\n", $_);
+	my $name;
+	if ($check_cmdb) {
+	$sel->execute($_) or die;
+	next if (not $sel->rows);
+	my @ci_rec = $sel->fetchrow_array();
+	my $status = @ci_rec;
+#	next if ($status ne "release" and $status ne "active");
+	next if ($status eq "build" or $status eq "decommissioned" or $status eq "move to obsolescence");
+#	printf("name: %s, status: %s\n", $name, $status);
+#	printf(MTMP "%s\n",$name) if ($status eq "active");
+	} else {
+		$name = $_;
+	}
+	printf(OUT "%s\n", $name);
+	printf(MTMP "%s\n",$name);
+}
+close(INPUT);
+close(OUT);
+close(MTMP);
+#exit 0;
+
+# Sort output to esxservers
+#$cmd = "sort -u $tmp | sed \"s:'::g\" > $esxservers";
+$cmd = "cat $tmp2 | sed \"s:'::g\" > $esxservers";
+printf("%s\n", $cmd);
+system($cmd);
+
+if (0) {
+$cmd = "cat $esxservers | grep -e '[d|g][0-9]t' -e 's[0-9][0-9]t' > $ngdcservers";
+printf("%s\n", $cmd);
+system($cmd);
+}
+
+# esxmon_servers
+$cmd = "cat $esxservers  > $esxmon";
+#$cmd = "cat $tmp3 | grep -e 'g[0-9]t' -e 's[0-9][0-9]t' > $esxmon";
+printf("%s\n", $cmd);
+system($cmd);
+
+msg("finished");
+
+unlink($tmp);
+unlink($tmp2);
+unlink($tmp3);
+exit 0;

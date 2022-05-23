@@ -1,0 +1,287 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Data::Dumper;
+use VMware::VIRuntime;
+use Getopt::Std;
+
+my $SMIGRATE_VERSION = 1.4;
+# 1.0 2013?     init version
+# 1.1 10/21/20	if destination is a datastore cluster, use apply recommendation
+# 1.2 11/1/20	detect if running threaded and if so, use a slot in the recommandtions
+# 1.3 11/2/20   add local conf
+# 1.4 11/3/20	disable apply recommendation - use direct datastore move
+
+use lib qw (/usr/local/lib/perl);
+use utils;
+
+$debug = 0;
+
+# Default vars
+my $vcserver = "";
+my $datastore = "";
+my $dry_run = 0;
+my $local_conf = "/usr/local/etc/smigrate.conf";
+# Apply will sit there @ 100% for a while, just move it
+my $doapply = 0;
+
+my %opts;
+getopts('d:c:r', \%opts);
+#print Dumper(%opts);
+
+my $conf = undef;
+if (defined($opts{c})) {
+	$conf = $opts{c};
+} elsif (-f $local_conf) {
+	$conf = $local_conf;
+}
+if (defined($conf)) {
+	dprintf(3,"conf: %s\n", $conf);
+	open(my $IN, "<", $conf) or die "$0: Can't open input file $conf: $!\n";
+	dprintf(3,"conf opened.\n");
+	my %hash;
+	while (<$IN>) {
+		chomp;
+		dprintf(3,"conf line: %s\n", $_);
+		my ($key, $value) = split /=/;
+		next unless defined $value;
+		$key =~ s/^\s+|\s+$//g;
+		$value =~ s/^\s+|\s+$//g;
+		$value =~ s/yes/1/;
+		$value =~ s/no/0/;
+		dprintf(3,"key: %s, value: %s\n", $key, $value);
+		my $cmd = '$' . $key . ' = ' . $value . ';';
+		dprintf(3,"cmd: %s\n", $cmd);
+		eval $cmd;
+	}
+}
+$debug = $opts{d} if (defined($opts{d}));
+$dry_run = 1 if (defined($opts{r}));
+
+if ($debug >= 3) {
+	printf("vars:\n");
+	printf("vcserver: %s\n", $vcserver);
+	printf("datastore: %s\n", $datastore);
+}
+
+my $name = $ARGV[0];
+exit 0 unless($name);
+dprintf(0,"VM name: %s\n", $name);
+
+my $dest = $ARGV[1];
+$dest = $datastore unless($dest);
+if (length($dest) < 1) {
+	printf("error: datastore not specified\n");
+	exit(1);
+}
+dprintf(0,"Destination Datastore: %s\n", $dest);
+
+my $server = $ARGV[2];
+$server = $vcserver unless($server);
+if (length($server) < 1) {
+	printf("error: server not specified\n");
+	exit(1);
+}
+dprintf(3,"server: %s\n", $server);
+
+my ($dnsname,$aliases,$addrtype,$length,@addrs) = gethostbyname($server);
+unless($dnsname) {
+	printf("error: unable to resolve: %s\n", $server);
+	exit(1);
+} else {
+	$server = $dnsname;
+	dprintf(3,"NEW server: %s\n", $server);
+}
+dprintf(0,"VMware server: %s\n", $server);
+
+# Get user and pass
+my $user = `cat /usr/local/etc/.vim  | grep "^$server" | head -1 | awk '{ print \$2 }'`;
+chomp($user);
+$user = "" unless($user);
+if (!length($user)) {
+	printf("error: unable to find user for server, aborting\n");
+	exit(1);
+}
+my $pass = `/usr/local/bin/vim_cred -g -x -s '$server' -u '$user'`;
+chomp($pass);
+dprintf(3,"user: %s, pass: %s\n", $user, $pass);
+
+dprintf(0,"Connecting to server...\n");
+$ENV{'VI_PROTOCOL'} = 'https';
+$ENV{'VI_SERVER'} = $server;
+$ENV{'VI_SERVICEPATH'} = '/sdk';
+$ENV{'VI_USERNAME'} = $user;
+$ENV{'VI_PASSWORD'} = $pass;
+Opts::parse();
+#Opts::validate();
+dprintf(3,"Connecting...\n");
+Util::connect();
+
+my $task;
+sub getStatus {
+        my ($taskRef,$message) = @_;
+
+        my $task_view = Vim::get_view(mo_ref => $taskRef);
+        my $continue = 1;
+        while ($continue) {
+                my $info = $task_view->info;
+                if ($info->state->val eq 'success') {
+                        return $info->result;
+                        $continue = 0;
+                } elsif ($info->state->val eq 'error') {
+                        my $soap_fault = SoapFault->new;
+                        $soap_fault->name($info->error->fault);
+                        $soap_fault->detail($info->error->fault);
+                        $soap_fault->fault_string($info->error->localizedMessage);
+                        die "$soap_fault\n";
+                }
+                sleep 2;
+                $task_view->ViewBase::update_view_data();
+        }
+}
+# Get VM
+dprintf(0,"Gathering info...\n");
+my $vm = Vim::find_entity_view( view_type => 'VirtualMachine', filter => { 'name' => qr/^$name/i });
+unless($vm) {
+	printf("error: unable to find vm in inventory!\n");
+	exit(1);
+}
+#print Dumper($vm);
+
+# Get current Host
+my $host = Vim::get_view(mo_ref => $vm->runtime->host);
+unless($host) {
+	printf("error: unable to find host in inventory!\n");
+	exit(1);
+}
+#print Dumper($host);
+dprintf(1,"host: %s\n", $host->{name});
+
+# Get current Cluster
+my $cluster = Vim::get_view(mo_ref => $host->parent);
+$cluster = Vim::get_view( mo_ref => $cluster->parent ) if ($host->parent->type eq "ComputeResource");
+#print Dumper($cluster);
+dprintf(1,"cluster: %s\n", $cluster->{name});
+
+#		findhostfords($cluster,$host,$destds);
+sub checkhostfords {
+        my ($host,$ds) = @_;
+
+	dprintf(3,"checking host: %s\n", $host->{name});
+	foreach my $hostds (@{$host->{datastore}}) {
+		dprintf(3,"hostds value: %s\n", $hostds->{value});
+		if ($hostds->{value} eq $ds->{mo_ref}->{value}) {
+			return $host;
+		}
+	}
+}
+
+# See if the destination is a datastore cluster
+my $destds;
+my $domove = 1;
+my $pod = Vim::find_entity_view(view_type => 'StoragePod', filter => {'name' => $dest}, properties => ['name']);
+unless($pod) {
+	# Find destination Datastore
+	dprintf(0,"Finding dest datastore...\n");
+	$destds = Vim::find_entity_view( view_type => 'Datastore', filter => { 'name' => $dest });
+	unless($destds) {
+		printf("error: unable to find dest datastore in inventory!\n");
+		Util::disconnect();
+	        exit 1;
+	}
+	#print Dumper($destds);
+
+	# does the ds exist on the host we're on?
+	my $dest_host;
+	if(checkhostfords($host,$destds)) {
+		$dest_host = $host;
+	} else {
+		# Find a suitable dest host in OUR cluster
+		my $found_host = 0;
+		my ($vmds,$hostds);
+		dprintf(0,"Finding destination host...\n");
+		foreach (@{$cluster->{host}}) {
+			$dest_host = Vim::get_view(mo_ref => $_);
+			if (checkhostfords($dest_host,$destds)) {
+				$found_host = 1;
+				last;
+			}
+		}
+		dprintf(3,"found_host: %s\n",$found_host);
+		if (!$found_host) {
+			printf("error: unable to find destination host that shares datastore!\n");
+			exit(1);
+		}
+	}
+	dprintf(3,"Selected host: %s\n", $dest_host->{name});
+
+	# If it's not on the dest host, migrate it
+	dprintf(0,"Current host: %s, Dest host: %s\n", $host->{name}, $dest_host->{name});
+	if ($dest_host->{name} ne $host->{name}) {
+		dprintf(0,"Migrating to host: %s...\n", $dest_host->{name});
+
+		# Do the migration
+		if (!$dry_run) {
+			my $task = $vm->MigrateVM_Task(
+				host => $dest_host,
+				priority => VirtualMachineMovePriority->new('defaultPriority'),
+			);
+			getStatus($task,$vm->{name} . ": Migration successful");
+		}
+	}
+} else {
+	my $podSpec = StorageDrsPodSelectionSpec->new(storagePod => $pod->{mo_ref});
+	my $sps = StoragePlacementSpec->new(type => "relocate", podSelectionSpec => $podSpec, vm => $vm->{mo_ref} );
+	my $storageMgr = Vim::get_view(mo_ref => Vim::get_service_content()->storageResourceManager);
+	dprintf(3,"Getting recommendation...\n");
+	my $result = eval { $storageMgr->RecommendDatastores(storageSpec => $sps) };
+	unless($result) {
+		dprintf(0,"No recommendations returned, not migrating storage\n");
+		exit(0);
+	}
+	# Get a count of recommendations
+	my $rcount = scalar @{$result->{recommendations}};
+	dprintf(3,"rcount: %d\n", $rcount);
+	my $rec;
+	my $slot = 0;
+	# Check if we're running under worker (multi-threaded)
+	my $serial = $ENV{'WORKER_SERIAL'}; 
+	if (defined($serial)) {
+		dprintf(3,"serial: %d\n", $serial);
+		# set slot as a modulus of recs & serial
+		$slot = $serial % $rcount;
+	}
+	# select rec using slot
+	dprintf(3,"slot: %d\n", $slot);
+	$rec = eval { $result->recommendations->[$slot] } || undef;
+	unless($rec) {
+		dprintf(0,"ERROR: unable to move to datastore cluster: %s\n", $result->drsFault);
+		exit(1);
+	}
+	if ($doapply) {
+		dprintf(0,"Applying recommendation...\n");
+		if (!$dry_run) {
+			$task = $storageMgr->ApplyStorageDrsRecommendation_Task(key => [$rec->key]);
+			getStatus($task,$vm->{name} . ": Storage migration successful");
+		}
+		$domove = 0;
+	} else {
+		$destds = Vim::get_view(mo_ref => $rec->action->[0]->destination);
+	}
+}
+
+if ($domove) {
+	# Relocate the VM to the dest datastore
+	dprintf(0,"Migrating to datastore: %s...\n",$destds->{name});
+	if (!$dry_run) {
+		my $spec = VirtualMachineRelocateSpec->new(datastore => $destds->{mo_ref});
+		$task = $vm->RelocateVM_Task(
+			spec => $spec,
+			priority => VirtualMachineMovePriority->new('defaultPriority'),
+		);
+		getStatus($task,$vm->{name} . ": Storage migration successful");
+	}
+}
+
+dprintf(0,"Done!\n");
+exit(0);

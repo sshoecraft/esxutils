@@ -1,0 +1,48 @@
+#!/bin/bash
+#
+BINDIR=~/bin
+DO_LOG=0
+LOGDIR=~/logs/esxmon
+DO_MAIL=0
+SENDTO="stephen.shoecraft@hp.com"
+#
+umask 022
+
+run_flag=/dev/shm/esxmon.running
+trap '{ echo "Aborting." ; rm -f $run_flag; exit 1; }' INT TERM ABRT
+test -f $run_flag && exit 0
+touch $run_flag
+
+now=`date +%Y%m%d%H%M`
+
+if test $DO_LOG -gt 0; then
+mkdir -p $LOGDIR
+logfile=$LOGDIR/$now.log
+sh -x $BINDIR/esxmon > $logfile 2>&1
+s=`du -sk $logfile | awk '{ print $1 }'`
+if test "$s" = "0"; then
+	rm -f $logfile
+else
+	echo "" >> $logfile
+	echo "Reported:" >> $logfile
+	echo "" >> $logfile
+	cat $HOME/etc/esxmon_reported >> $logfile
+fi
+else
+$BINDIR/esxmon
+fi
+
+if test $DO_MAIL -gt 0; then
+tmp=/tmp/rpmsg.dat
+rm -f $tmp
+#echo "From: ESXAdmin <esxadmin@company.com" >> $tmp
+#echo "Reply-To: noreply <noreply@company.com>" >> $tmp
+echo "Subject: esxmon run log for $now" >> $tmp
+echo "" >> $tmp
+cat $logfile >> $tmp
+cat $tmp | /usr/sbin/sendmail $SENDTO
+rm -f $tmp
+fi
+
+rm -f $run_flag
+exit 0

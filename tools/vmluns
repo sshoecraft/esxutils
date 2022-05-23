@@ -1,0 +1,33 @@
+xplist -a > /tmp/xl
+esxcfg-scsidevs -c > /tmp/sl
+find /vmfs/volumes -name "*-rdmp.vmdk" > /tmp/rl
+while read n
+do
+#	echo "n: $n"
+	dir=`dirname "$n"`
+	name=`basename "$dir" | awk '{ print tolower($1) }'`
+#	echo "name: $name"
+	t=`echo "$n" | sed "s:-rdmp::"`
+#	echo "t: $t"
+	vml=`/usr/sbin/vmkfstools -q "$t" 2>&1 | grep "Maps to:" | awk -F"Maps to: " '{ print $2 }'`
+#	echo "vml: $vml"
+	if test -n "$vml"; then
+		naa=`readlink /vmfs/devices/disks/"$vml"`
+#		echo "naa: $naa"
+		if test -n "$naa"; then
+			dev=`cat /tmp/sl | grep $naa | awk '{ print $3 }'`
+#			echo "dev: $dev"
+			xp=`cat /tmp/xl | grep ^$dev`
+			culdev=`echo $xp | awk '{ print $4 }'`
+			serial=`echo $xp | awk '{ print $6 }'`
+#			echo "culdev: $culdev, serial: $serial"
+		else
+			culdev="unknown"
+			serial="unknown"
+		fi
+	else
+		culdev="unknown"
+		serial="unknown"
+	fi
+	echo "$name $culdev $serial"
+done < /tmp/rl

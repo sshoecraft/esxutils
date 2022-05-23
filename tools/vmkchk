@@ -1,0 +1,191 @@
+#!/bin/bash
+#
+let verbose=1
+let debug=0
+HOSTCHARS=5
+#
+lib=/usr/local/lib/tools
+test `echo $0 | awk '{ print substr($0,0,2) }'`  = "./" && lib=./
+test $debug -gt 0 && echo "lib: $lib"
+host_script=$lib/vmkchk_host
+#
+#declare -t blah=value
+#trap "echo blah is being used here." DEBUG
+#
+hosts_file=/tmp/vmkchk_hosts_$$.dat
+test $debug -gt 0 && echo "hosts_file: $hosts_file"
+ips_file=/tmp/vmkchk_ips_$$.dat
+test $debug -gt 0 && echo "ips_file: $ips_file"
+#
+while true
+do
+        case "$1" in
+        "-v")
+                shift
+                verbose=1
+                ;;
+        "-d")
+                shift
+                debug=$1
+		shift
+                ;;
+	"-n")
+		shift
+		HOSTCHARS=$1
+		shift
+		;;
+	*)
+		break;;
+	esac
+done
+
+if test -z "$1"; then
+	echo "usage: vmkchk <farm>"
+	exit 1
+fi
+#
+tmp=/tmp/farminfo.$$
+/usr/local/bin/farminfo -x $1 > $tmp 2>&1
+status=$?
+if test $status -ne 0; then
+	cat $tmp | sed 's/farminfo: //'
+	rm -f $tmp
+	exit 1
+fi
+cat $tmp | sort > $hosts_file
+rm -f $tmp
+#
+strip_domain() {
+        echo $1 | awk '{
+                i=index($0,".");
+                if (i > 1)
+                        print substr($0,1,i-1)
+                else
+                        print $0;
+                endif
+        }'
+}
+get_ips() {
+	let c=0
+	while read n
+	do
+		test $verbose -gt 1 && echo "Getting vmknic IP from: $n"
+		ip=`/usr/local/bin/esxconf -s $n config.vmotion.ipConfig.ipAddress | awk '{ print $2 }'`
+		test "$ip" = "logging" && ip="+DEADC0DE+"
+#		status=$?
+		test $debug -gt 0 && echo "host: $n, ip: $ip"
+#		ip="127.0.0.$c"
+		hosts[c]="$n"
+		ips[c]="$ip"
+		let c=$c+1
+	done < $hosts_file
+	count=$c
+}
+
+write_ips() {
+	let c=0
+	rm -f $ips_file; touch $ips_file
+	while test $c -lt $count
+	do
+		shosts[c]=$(strip_domain ${hosts[c]})
+		echo ${ips[c]} >> $ips_file
+		let c=$c+1
+	done
+}
+
+# Collect the info
+test $verbose -eq 1 && echo "Getting vmknic IPs..."
+get_ips $1
+write_ips $1
+
+if test $debug -gt 0; then
+	let c=0
+	while test $c -lt $count
+	do
+		printf "hosts[%d]: %s, ips[%d]: %s\n" $c "${hosts[c]}" $c "${ips[c]}"
+		let c=$c+1
+	done
+fi
+
+# Run the tests
+test $verbose -gt 0 && echo "Testing vmknics..."
+/usr/local/bin/worker $hosts_file 128 $host_script $ips_file
+#rm -f $hosts_file $ips_file
+
+# Get teh results
+test $verbose -gt 0 && echo "Gathering results..."
+let c=0
+while test $c -lt $count
+do
+	results_file=/tmp/vmkchk_"${hosts[c]}".dat
+	if test $debug -gt 0; then
+		echo "results_file: $results_file"
+		cat $results_file
+	fi
+	if test -f $results_file; then
+		results[c]=`cat $results_file`
+#		rm -f $results_file
+	else
+		echo "*** ERROR: results file for ${shosts[c]} not found!"
+		results[c]=""
+	fi
+	test $debug -gt 0 && printf "hosts[%d]: %s, results[%d]: %s\n" $c "${hosts[c]}" $c "${results[c]}"
+	let c=$c+1
+done
+
+# Create format
+let x=0
+format="%-${HOSTCHARS}.${HOSTCHARS}s"
+while test $x -lt $count
+do
+	format="$format %-${HOSTCHARS}.${HOSTCHARS}s"
+	let x=$x+1
+done
+test $verbose -gt 1 && echo "format: $format"
+
+# Create header
+let x=0
+header="\"\""
+while test $x -lt $count
+do
+#	header="$header \"${shosts[x]}\""
+	n3=$(echo "${shosts[x]}" | grep -o ".\{$HOSTCHARS\}$")
+	header="$header \"$n3\""
+	let x=$x+1
+done
+test $verbose -gt 1 && echo "header: $header"
+
+# Display header
+printf "$format\n" " " `eval echo $header`
+
+# Display results
+IFS=","
+let x=0
+while test $x -lt $count
+do
+	n3=$(echo "${shosts[x]}" | grep -o ".\{$HOSTCHARS\}$")
+#	line="\"${shosts[x]}\""
+	line="\"$n3\""
+	r=${results[x]}
+	test $debug -ge 3 && echo "${shosts[x]}: $r"
+	let y=0
+	for v in $r
+	do
+		test $debug -ge 3 && echo "v[$y]: $v"
+		test -z "$v" && v=2
+		case $v in
+		0) status="OK";;
+		1) status="FAIL";;
+		*) status="ERROR";;
+		esac
+		test $debug -ge 3 && echo "status: $status"
+		line="$line $status"
+		test $debug -ge 3 && echo "line: $line"
+		let y=$y+1
+		test $y -ge $count && break
+	done
+	cmd="printf \"$format\n\" `eval echo $line`"
+	eval $cmd
+	let x=$x+1
+done
+rm -f /tmp/vmkchk_*

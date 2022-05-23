@@ -1,0 +1,15 @@
+#!/usr/bin/perl
+use strict;
+use CGI;
+
+my $debug = 0;
+
+sub dprintf { my $level = shift; printf(@_) if ($debug >= $level); }
+
+my $q = new CGI;
+print $q->header();
+
+my $ServerName = $q->param('ServerName');
+dprintf(1,"ServerName: %s\n", $ServerName);
+system("/usr/local/sbin/volconfig $ServerName");
+exit 0;

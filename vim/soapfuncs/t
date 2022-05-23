@@ -1,0 +1,57 @@
+
+ACT=get
+REQ=info
+
+#struct ManagedObjectReference *rootFolder
+# { tag, ptr, func },
+doit() {
+	n=`echo $n | sed "s:;::"`
+	printf "\t\t{ \"%s\", &$REQ->%s, %s, 0 },\n" "$n" "$n" "$g"
+}
+while read line
+do
+	c=`echo $line | awk '{ print $1 }'`
+	test -z "$c" && continue
+#	echo "c: $c"
+	test "$c" = "//" && continue
+	case "$c" in
+	"bool")
+		n=`echo $line | awk '{ c=substr($2,1,1); if (c == "*") print substr($2,2); else print $2 }'`
+		g=$ACT"_$c"
+		doit
+		;;
+	"int")
+		n=`echo $line | awk '{ c=substr($2,1,1); if (c == "*") print substr($2,2); else print $2 }'`
+		g=$ACT"_$c"
+		doit
+		;;
+	"char")
+		n=`echo $line | awk '{ c=substr($2,1,1); if (c == "*") print substr($2,2); else print $2 }'`
+		g=$ACT"_$c"
+		doit
+		;;
+	"time_t")
+		n=`echo $line | awk '{ c=substr($2,1,1); if (c == "*") print substr($2,2); else print $2 }'`
+		g=$ACT"_$c"
+		doit
+		;;
+	"struct")
+		c2=`echo $line | awk '{ print $2 }'`
+		n=`echo $line | awk '{ c=substr($3,1,1); if (c == "*") print substr($3,2); else print $3 }'`
+#		echo "c2: $c2"
+		g=$ACT"_$c2"
+		doit
+		;;
+	"list")
+		c2=`echo $line | awk '{ print $2 }'`
+		n=`echo $line | awk '{ c=substr($2,1,1); if (c == "*") print substr($2,2); else print $2 }'`
+#		g=$ACT"_$c"
+		g=$ACT"_$c2"
+#		echo "g: $g"
+		doit
+		;;
+	*)
+		echo "unknown type: $c"
+		;;
+	esac
+done < d

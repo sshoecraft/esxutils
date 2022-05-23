@@ -1,0 +1,2 @@
+#Name,Host,Datacenter,Guest-Id,Datastore,Disksize,Memory,Number-of-Processor,Nic-Network,Nic-Poweron
+test1,vm-misc12-15a.uson.usoncology.int,Houston GTC,rhel6_64Guest,Misc12-XP-vsan6,20,8,4,10.129.167.x,0

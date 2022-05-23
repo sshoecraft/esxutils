@@ -1,0 +1,23 @@
+#!/usr/bin/perl
+use CGI;
+
+my $debug = 0;
+sub dprintf { my $level = shift; printf(@_) if ($debug >= $level); }
+
+my $SERVER = "tools.uprd.usoncology.unx";
+
+my $q = new CGI;
+print $q->header();
+my $hostname = $q->param('hostname');
+my $ip = $q->param('ip');
+my $os = $q->param('os');
+my $version = $q->param('version');
+my $build = $q->param('build');
+my $model = $q->param('model');
+$model =~ s/ /%20/g;
+my $args = $q->param('args');
+my $wg = "/usr/bin/curl -s -S -N \'http://$SERVER/cgi-bin/genconf?hostname=$hostname&ip=$ip&os=$os&version=$version&build=$build&model=$model&args=$args\'";
+dprintf(1,"#cmd: %s\n", $wg);
+open(WG,"$wg |");
+while(<WG>) { print }
+close(WG); wait;

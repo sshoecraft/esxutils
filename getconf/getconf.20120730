@@ -1,0 +1,51 @@
+#!/bin/sh
+echo "replay: $replay"
+if test -z "$replay"; then
+	for path in /etc/opt/LinuxCOE /scratch
+	do
+		if test -f $path/replay; then
+			replay=$path/replay
+			break
+		fi
+	done
+	test -z "$replay" && replay=/dev/null
+	export replay
+fi
+way=`cat $replay | grep ^waystation= | awk -F= '{ print $2 }'`
+test -z "$way" && way="linuxcoe.corp.hp.com"
+export way
+HOSTNAME=`hostname -f`
+if test `echo $HOSTNAME | grep -c localhost` -gt 0; then
+	HOSTNAME=`cat $replay | grep ^hostname= | awk -F= '{ print $2 }'`
+	if test -z "$HOSTNAME"; then
+		if test -f /etc/sysconfig/network; then
+			HOSTNAME=`cat /etc/sysconfig/network | grep ^HOSTNAME= | awk -F= '{ print $2 }'`
+		else
+			HOSTNAME=unknown
+		fi
+	fi
+fi
+tmp=`vmware -v | sed "s: Server::"`
+OS=`echo $tmp | awk '{ print $2 }'`
+VERSION=`echo $tmp | awk '{ print $3 }'`
+BUILD=`echo $tmp | awk -Fbuild- '{ print $2 }'`
+test -f /usr/bin/vmware-vim-cmd || test -x /usr/bin/vim-cmd && ln -s /usr/bin/vim-cmd /usr/bin/vmware-vim-cmd
+if test -x /usr/sbin/dmidecode; then
+	TMP=`/usr/sbin/dmidecode | grep Product | head -1 | awk -F': ' '{ print $2 }'`
+else
+	if test -x /sbin/localcli; then
+		TMP=`localcli hardware platform get | grep Product | awk -F': ' '{ print $2 }'`
+	else
+		eval TMP=`vmware-vim-cmd hostsvc/hosthardware 2>/dev/null | grep "model = " | awk -F'= ' '{ print $2 }' | sed "s:,::"`
+	fi
+fi
+MODEL=`echo $TMP | sed "s: :%20:g"`
+url=`echo "http://$way/cgi-bin/genconf?hostname=$HOSTNAME&os=$OS&version=$VERSION&build=$BUILD&model=$MODEL"`
+# XXX make sure it's the last thing to run
+filename=zzzhostconf
+initname=/etc/init.d/$filename
+eval wget -q '$url' -O $initname
+if test -f $initname; then
+	chmod +x $initname
+	/sbin/chkconfig $filename on
+fi

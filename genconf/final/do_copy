@@ -1,0 +1,5 @@
+#!/bin/bash
+smbclient //ddc-coe/misc -U guest -N << EOF
+put new vmware-final
+quit
+EOF

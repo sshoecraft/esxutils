@@ -1,0 +1,1939 @@
+main(111): obj: type: PerformanceManager, val: ha-perfmgr
+main(128): *server: 103, user: (nil)
+main(134): server: g3t0001h, port: 0, user: sitescope, pass: need2know
+main(141): optind: 5, argc: 5
+vim_connect(50): endpoint: https://g3t0001h/sdk
+vim_connect(53): connecting...
+vim_login(8): s: 0x53a050, user: 0x42de97, pass: 0x42dea1
+vim_login(32): fullName: SiteScopeMonitoring
+vim_getinfo(37): type: 0x53a010, paths: (nil), mo_ref: 0x7fbffff7b0
+description.counterType1.label Average
+description.counterType1.summary Average performance counter value collected
+description.counterType1.key average
+description.counterType2.label Maximum
+description.counterType2.summary Maximum performance counter value collected
+description.counterType2.key maximum
+description.counterType3.label Minimum
+description.counterType3.summary Minimum performance counter value collected
+description.counterType3.key minimum
+description.counterType4.label Latest
+description.counterType4.summary Latest performance counter value collected
+description.counterType4.key latest
+description.counterType5.label Summation
+description.counterType5.summary Summation performance counter value collected
+description.counterType5.key summation
+description.counterType6.label None
+description.counterType6.summary No rollup performed
+description.counterType6.key none
+description.statsType1.label Absolute
+description.statsType1.summary Absolute statistic collection
+description.statsType1.key absolute
+description.statsType2.label Delta
+description.statsType2.summary Delta statistic collection
+description.statsType2.key delta
+description.statsType3.label Rate
+description.statsType3.summary Rate statistic collection
+description.statsType3.key rate
+historicalInterval.PerfInterval.key 1
+historicalInterval.PerfInterval.samplingPeriod 300
+historicalInterval.PerfInterval.name PastDay
+historicalInterval.PerfInterval.length 129600
+historicalInterval.PerfInterval.enabled true
+perfCounter.PerfCounterInfo1.key 0
+perfCounter.PerfCounterInfo1.nameInfo.label CPU Usage (None)
+perfCounter.PerfCounterInfo1.nameInfo.summary CPU usage as a percentage over the collected interval
+perfCounter.PerfCounterInfo1.nameInfo.key usage
+perfCounter.PerfCounterInfo1.groupInfo.label CPU
+perfCounter.PerfCounterInfo1.groupInfo.summary CPU
+perfCounter.PerfCounterInfo1.groupInfo.key cpu
+perfCounter.PerfCounterInfo1.unitInfo.label Percent
+perfCounter.PerfCounterInfo1.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo1.unitInfo.key percent
+perfCounter.PerfCounterInfo1.rollupType none
+perfCounter.PerfCounterInfo1.statsType rate
+perfCounter.PerfCounterInfo1.associatedCounterId1 1
+perfCounter.PerfCounterInfo1.associatedCounterId2 3
+perfCounter.PerfCounterInfo1.associatedCounterId3 2
+perfCounter.PerfCounterInfo2.key 1
+perfCounter.PerfCounterInfo2.nameInfo.label CPU Usage (Average)
+perfCounter.PerfCounterInfo2.nameInfo.summary CPU usage as a percentage over the collected interval
+perfCounter.PerfCounterInfo2.nameInfo.key usage
+perfCounter.PerfCounterInfo2.groupInfo.label CPU
+perfCounter.PerfCounterInfo2.groupInfo.summary CPU
+perfCounter.PerfCounterInfo2.groupInfo.key cpu
+perfCounter.PerfCounterInfo2.unitInfo.label Percent
+perfCounter.PerfCounterInfo2.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo2.unitInfo.key percent
+perfCounter.PerfCounterInfo2.rollupType average
+perfCounter.PerfCounterInfo2.statsType rate
+perfCounter.PerfCounterInfo3.key 2
+perfCounter.PerfCounterInfo3.nameInfo.label CPU Usage (Maximum)
+perfCounter.PerfCounterInfo3.nameInfo.summary CPU usage as a percentage over the collected interval
+perfCounter.PerfCounterInfo3.nameInfo.key usage
+perfCounter.PerfCounterInfo3.groupInfo.label CPU
+perfCounter.PerfCounterInfo3.groupInfo.summary CPU
+perfCounter.PerfCounterInfo3.groupInfo.key cpu
+perfCounter.PerfCounterInfo3.unitInfo.label Percent
+perfCounter.PerfCounterInfo3.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo3.unitInfo.key percent
+perfCounter.PerfCounterInfo3.rollupType maximum
+perfCounter.PerfCounterInfo3.statsType rate
+perfCounter.PerfCounterInfo4.key 3
+perfCounter.PerfCounterInfo4.nameInfo.label CPU Usage (Minimum)
+perfCounter.PerfCounterInfo4.nameInfo.summary CPU usage as a percentage over the collected interval
+perfCounter.PerfCounterInfo4.nameInfo.key usage
+perfCounter.PerfCounterInfo4.groupInfo.label CPU
+perfCounter.PerfCounterInfo4.groupInfo.summary CPU
+perfCounter.PerfCounterInfo4.groupInfo.key cpu
+perfCounter.PerfCounterInfo4.unitInfo.label Percent
+perfCounter.PerfCounterInfo4.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo4.unitInfo.key percent
+perfCounter.PerfCounterInfo4.rollupType minimum
+perfCounter.PerfCounterInfo4.statsType rate
+perfCounter.PerfCounterInfo5.key 4
+perfCounter.PerfCounterInfo5.nameInfo.label CPU Usage in MHz (None)
+perfCounter.PerfCounterInfo5.nameInfo.summary CPU usage in MHz over the collected interval. For hosts this can be represented on a per Virtual Machine basis as a stacked graph
+perfCounter.PerfCounterInfo5.nameInfo.key usagemhz
+perfCounter.PerfCounterInfo5.groupInfo.label CPU
+perfCounter.PerfCounterInfo5.groupInfo.summary CPU
+perfCounter.PerfCounterInfo5.groupInfo.key cpu
+perfCounter.PerfCounterInfo5.unitInfo.label MHz
+perfCounter.PerfCounterInfo5.unitInfo.summary Megahertz
+perfCounter.PerfCounterInfo5.unitInfo.key megaHertz
+perfCounter.PerfCounterInfo5.rollupType none
+perfCounter.PerfCounterInfo5.statsType rate
+perfCounter.PerfCounterInfo5.associatedCounterId1 5
+perfCounter.PerfCounterInfo5.associatedCounterId2 7
+perfCounter.PerfCounterInfo5.associatedCounterId3 6
+perfCounter.PerfCounterInfo6.key 5
+perfCounter.PerfCounterInfo6.nameInfo.label CPU Usage in MHz (Average)
+perfCounter.PerfCounterInfo6.nameInfo.summary CPU usage in MHz over the collected interval. For hosts this can be represented on a per Virtual Machine basis as a stacked graph
+perfCounter.PerfCounterInfo6.nameInfo.key usagemhz
+perfCounter.PerfCounterInfo6.groupInfo.label CPU
+perfCounter.PerfCounterInfo6.groupInfo.summary CPU
+perfCounter.PerfCounterInfo6.groupInfo.key cpu
+perfCounter.PerfCounterInfo6.unitInfo.label MHz
+perfCounter.PerfCounterInfo6.unitInfo.summary Megahertz
+perfCounter.PerfCounterInfo6.unitInfo.key megaHertz
+perfCounter.PerfCounterInfo6.rollupType average
+perfCounter.PerfCounterInfo6.statsType rate
+perfCounter.PerfCounterInfo7.key 6
+perfCounter.PerfCounterInfo7.nameInfo.label CPU Usage in MHz (Maximum)
+perfCounter.PerfCounterInfo7.nameInfo.summary CPU usage in MHz over the collected interval. For hosts this can be represented on a per Virtual Machine basis as a stacked graph
+perfCounter.PerfCounterInfo7.nameInfo.key usagemhz
+perfCounter.PerfCounterInfo7.groupInfo.label CPU
+perfCounter.PerfCounterInfo7.groupInfo.summary CPU
+perfCounter.PerfCounterInfo7.groupInfo.key cpu
+perfCounter.PerfCounterInfo7.unitInfo.label MHz
+perfCounter.PerfCounterInfo7.unitInfo.summary Megahertz
+perfCounter.PerfCounterInfo7.unitInfo.key megaHertz
+perfCounter.PerfCounterInfo7.rollupType maximum
+perfCounter.PerfCounterInfo7.statsType rate
+perfCounter.PerfCounterInfo8.key 7
+perfCounter.PerfCounterInfo8.nameInfo.label CPU Usage in MHz (Minimum)
+perfCounter.PerfCounterInfo8.nameInfo.summary CPU usage in MHz over the collected interval. For hosts this can be represented on a per Virtual Machine basis as a stacked graph
+perfCounter.PerfCounterInfo8.nameInfo.key usagemhz
+perfCounter.PerfCounterInfo8.groupInfo.label CPU
+perfCounter.PerfCounterInfo8.groupInfo.summary CPU
+perfCounter.PerfCounterInfo8.groupInfo.key cpu
+perfCounter.PerfCounterInfo8.unitInfo.label MHz
+perfCounter.PerfCounterInfo8.unitInfo.summary Megahertz
+perfCounter.PerfCounterInfo8.unitInfo.key megaHertz
+perfCounter.PerfCounterInfo8.rollupType minimum
+perfCounter.PerfCounterInfo8.statsType rate
+perfCounter.PerfCounterInfo9.key 8
+perfCounter.PerfCounterInfo9.nameInfo.label CPU Reserved Capacity
+perfCounter.PerfCounterInfo9.nameInfo.summary Total CPU capacity reserved by the virtual machines
+perfCounter.PerfCounterInfo9.nameInfo.key reservedCapacity
+perfCounter.PerfCounterInfo9.groupInfo.label CPU
+perfCounter.PerfCounterInfo9.groupInfo.summary CPU
+perfCounter.PerfCounterInfo9.groupInfo.key cpu
+perfCounter.PerfCounterInfo9.unitInfo.label MHz
+perfCounter.PerfCounterInfo9.unitInfo.summary Megahertz
+perfCounter.PerfCounterInfo9.unitInfo.key megaHertz
+perfCounter.PerfCounterInfo9.rollupType average
+perfCounter.PerfCounterInfo9.statsType absolute
+perfCounter.PerfCounterInfo10.key 9
+perfCounter.PerfCounterInfo10.nameInfo.label CPU System
+perfCounter.PerfCounterInfo10.nameInfo.summary CPU time spent on system processes
+perfCounter.PerfCounterInfo10.nameInfo.key system
+perfCounter.PerfCounterInfo10.groupInfo.label CPU
+perfCounter.PerfCounterInfo10.groupInfo.summary CPU
+perfCounter.PerfCounterInfo10.groupInfo.key cpu
+perfCounter.PerfCounterInfo10.unitInfo.label Millisecond
+perfCounter.PerfCounterInfo10.unitInfo.summary Millisecond
+perfCounter.PerfCounterInfo10.unitInfo.key millisecond
+perfCounter.PerfCounterInfo10.rollupType summation
+perfCounter.PerfCounterInfo10.statsType delta
+perfCounter.PerfCounterInfo11.key 10
+perfCounter.PerfCounterInfo11.nameInfo.label CPU Wait
+perfCounter.PerfCounterInfo11.nameInfo.summary CPU time spent in wait state
+perfCounter.PerfCounterInfo11.nameInfo.key wait
+perfCounter.PerfCounterInfo11.groupInfo.label CPU
+perfCounter.PerfCounterInfo11.groupInfo.summary CPU
+perfCounter.PerfCounterInfo11.groupInfo.key cpu
+perfCounter.PerfCounterInfo11.unitInfo.label Millisecond
+perfCounter.PerfCounterInfo11.unitInfo.summary Millisecond
+perfCounter.PerfCounterInfo11.unitInfo.key millisecond
+perfCounter.PerfCounterInfo11.rollupType summation
+perfCounter.PerfCounterInfo11.statsType delta
+perfCounter.PerfCounterInfo12.key 11
+perfCounter.PerfCounterInfo12.nameInfo.label CPU Ready
+perfCounter.PerfCounterInfo12.nameInfo.summary CPU time spent in ready state
+perfCounter.PerfCounterInfo12.nameInfo.key ready
+perfCounter.PerfCounterInfo12.groupInfo.label CPU
+perfCounter.PerfCounterInfo12.groupInfo.summary CPU
+perfCounter.PerfCounterInfo12.groupInfo.key cpu
+perfCounter.PerfCounterInfo12.unitInfo.label Millisecond
+perfCounter.PerfCounterInfo12.unitInfo.summary Millisecond
+perfCounter.PerfCounterInfo12.unitInfo.key millisecond
+perfCounter.PerfCounterInfo12.rollupType summation
+perfCounter.PerfCounterInfo12.statsType delta
+perfCounter.PerfCounterInfo13.key 12
+perfCounter.PerfCounterInfo13.nameInfo.label CPU Extra
+perfCounter.PerfCounterInfo13.nameInfo.summary CPU time that is extra
+perfCounter.PerfCounterInfo13.nameInfo.key extra
+perfCounter.PerfCounterInfo13.groupInfo.label CPU
+perfCounter.PerfCounterInfo13.groupInfo.summary CPU
+perfCounter.PerfCounterInfo13.groupInfo.key cpu
+perfCounter.PerfCounterInfo13.unitInfo.label Millisecond
+perfCounter.PerfCounterInfo13.unitInfo.summary Millisecond
+perfCounter.PerfCounterInfo13.unitInfo.key millisecond
+perfCounter.PerfCounterInfo13.rollupType summation
+perfCounter.PerfCounterInfo13.statsType delta
+perfCounter.PerfCounterInfo14.key 13
+perfCounter.PerfCounterInfo14.nameInfo.label CPU Guaranteed
+perfCounter.PerfCounterInfo14.nameInfo.summary CPU time that is guaranteed
+perfCounter.PerfCounterInfo14.nameInfo.key guaranteed
+perfCounter.PerfCounterInfo14.groupInfo.label CPU
+perfCounter.PerfCounterInfo14.groupInfo.summary CPU
+perfCounter.PerfCounterInfo14.groupInfo.key cpu
+perfCounter.PerfCounterInfo14.unitInfo.label Millisecond
+perfCounter.PerfCounterInfo14.unitInfo.summary Millisecond
+perfCounter.PerfCounterInfo14.unitInfo.key millisecond
+perfCounter.PerfCounterInfo14.rollupType latest
+perfCounter.PerfCounterInfo14.statsType absolute
+perfCounter.PerfCounterInfo15.key 14
+perfCounter.PerfCounterInfo15.nameInfo.label CPU Used
+perfCounter.PerfCounterInfo15.nameInfo.summary CPU time that is used
+perfCounter.PerfCounterInfo15.nameInfo.key used
+perfCounter.PerfCounterInfo15.groupInfo.label CPU
+perfCounter.PerfCounterInfo15.groupInfo.summary CPU
+perfCounter.PerfCounterInfo15.groupInfo.key cpu
+perfCounter.PerfCounterInfo15.unitInfo.label Millisecond
+perfCounter.PerfCounterInfo15.unitInfo.summary Millisecond
+perfCounter.PerfCounterInfo15.unitInfo.key millisecond
+perfCounter.PerfCounterInfo15.rollupType summation
+perfCounter.PerfCounterInfo15.statsType delta
+perfCounter.PerfCounterInfo16.key 15
+perfCounter.PerfCounterInfo16.nameInfo.label CPU Idle
+perfCounter.PerfCounterInfo16.nameInfo.summary CPU time spent in idle state
+perfCounter.PerfCounterInfo16.nameInfo.key idle
+perfCounter.PerfCounterInfo16.groupInfo.label CPU
+perfCounter.PerfCounterInfo16.groupInfo.summary CPU
+perfCounter.PerfCounterInfo16.groupInfo.key cpu
+perfCounter.PerfCounterInfo16.unitInfo.label Millisecond
+perfCounter.PerfCounterInfo16.unitInfo.summary Millisecond
+perfCounter.PerfCounterInfo16.unitInfo.key millisecond
+perfCounter.PerfCounterInfo16.rollupType summation
+perfCounter.PerfCounterInfo16.statsType delta
+perfCounter.PerfCounterInfo17.key 131072
+perfCounter.PerfCounterInfo17.nameInfo.label Disk Usage (None)
+perfCounter.PerfCounterInfo17.nameInfo.summary Aggregated storage performance statistics. For hosts this can be represented on a per Virtual Machine basis as a stacked graph
+perfCounter.PerfCounterInfo17.nameInfo.key usage
+perfCounter.PerfCounterInfo17.groupInfo.label Disk
+perfCounter.PerfCounterInfo17.groupInfo.summary Disk
+perfCounter.PerfCounterInfo17.groupInfo.key disk
+perfCounter.PerfCounterInfo17.unitInfo.label KBps
+perfCounter.PerfCounterInfo17.unitInfo.summary Kilobytes per second
+perfCounter.PerfCounterInfo17.unitInfo.key kiloBytesPerSecond
+perfCounter.PerfCounterInfo17.rollupType none
+perfCounter.PerfCounterInfo17.statsType rate
+perfCounter.PerfCounterInfo17.associatedCounterId1 131073
+perfCounter.PerfCounterInfo17.associatedCounterId2 131075
+perfCounter.PerfCounterInfo17.associatedCounterId3 131074
+perfCounter.PerfCounterInfo18.key 131073
+perfCounter.PerfCounterInfo18.nameInfo.label Disk Usage (Average)
+perfCounter.PerfCounterInfo18.nameInfo.summary Aggregated storage performance statistics. For hosts this can be represented on a per Virtual Machine basis as a stacked graph
+perfCounter.PerfCounterInfo18.nameInfo.key usage
+perfCounter.PerfCounterInfo18.groupInfo.label Disk
+perfCounter.PerfCounterInfo18.groupInfo.summary Disk
+perfCounter.PerfCounterInfo18.groupInfo.key disk
+perfCounter.PerfCounterInfo18.unitInfo.label KBps
+perfCounter.PerfCounterInfo18.unitInfo.summary Kilobytes per second
+perfCounter.PerfCounterInfo18.unitInfo.key kiloBytesPerSecond
+perfCounter.PerfCounterInfo18.rollupType average
+perfCounter.PerfCounterInfo18.statsType rate
+perfCounter.PerfCounterInfo19.key 131074
+perfCounter.PerfCounterInfo19.nameInfo.label Disk Usage (Maximum)
+perfCounter.PerfCounterInfo19.nameInfo.summary Aggregated storage performance statistics. For hosts this can be represented on a per Virtual Machine basis as a stacked graph
+perfCounter.PerfCounterInfo19.nameInfo.key usage
+perfCounter.PerfCounterInfo19.groupInfo.label Disk
+perfCounter.PerfCounterInfo19.groupInfo.summary Disk
+perfCounter.PerfCounterInfo19.groupInfo.key disk
+perfCounter.PerfCounterInfo19.unitInfo.label KBps
+perfCounter.PerfCounterInfo19.unitInfo.summary Kilobytes per second
+perfCounter.PerfCounterInfo19.unitInfo.key kiloBytesPerSecond
+perfCounter.PerfCounterInfo19.rollupType maximum
+perfCounter.PerfCounterInfo19.statsType rate
+perfCounter.PerfCounterInfo20.key 131075
+perfCounter.PerfCounterInfo20.nameInfo.label Disk Usage (Minimum)
+perfCounter.PerfCounterInfo20.nameInfo.summary Aggregated storage performance statistics. For hosts this can be represented on a per Virtual Machine basis as a stacked graph
+perfCounter.PerfCounterInfo20.nameInfo.key usage
+perfCounter.PerfCounterInfo20.groupInfo.label Disk
+perfCounter.PerfCounterInfo20.groupInfo.summary Disk
+perfCounter.PerfCounterInfo20.groupInfo.key disk
+perfCounter.PerfCounterInfo20.unitInfo.label KBps
+perfCounter.PerfCounterInfo20.unitInfo.summary Kilobytes per second
+perfCounter.PerfCounterInfo20.unitInfo.key kiloBytesPerSecond
+perfCounter.PerfCounterInfo20.rollupType minimum
+perfCounter.PerfCounterInfo20.statsType rate
+perfCounter.PerfCounterInfo21.key 131076
+perfCounter.PerfCounterInfo21.nameInfo.label Disk Read Requests
+perfCounter.PerfCounterInfo21.nameInfo.summary Number of disk reads in the period
+perfCounter.PerfCounterInfo21.nameInfo.key numberRead
+perfCounter.PerfCounterInfo21.groupInfo.label Disk
+perfCounter.PerfCounterInfo21.groupInfo.summary Disk
+perfCounter.PerfCounterInfo21.groupInfo.key disk
+perfCounter.PerfCounterInfo21.unitInfo.label Number
+perfCounter.PerfCounterInfo21.unitInfo.summary Number
+perfCounter.PerfCounterInfo21.unitInfo.key number
+perfCounter.PerfCounterInfo21.rollupType summation
+perfCounter.PerfCounterInfo21.statsType delta
+perfCounter.PerfCounterInfo22.key 131077
+perfCounter.PerfCounterInfo22.nameInfo.label Disk Write Requests
+perfCounter.PerfCounterInfo22.nameInfo.summary Number of disk writes in the period
+perfCounter.PerfCounterInfo22.nameInfo.key numberWrite
+perfCounter.PerfCounterInfo22.groupInfo.label Disk
+perfCounter.PerfCounterInfo22.groupInfo.summary Disk
+perfCounter.PerfCounterInfo22.groupInfo.key disk
+perfCounter.PerfCounterInfo22.unitInfo.label Number
+perfCounter.PerfCounterInfo22.unitInfo.summary Number
+perfCounter.PerfCounterInfo22.unitInfo.key number
+perfCounter.PerfCounterInfo22.rollupType summation
+perfCounter.PerfCounterInfo22.statsType delta
+perfCounter.PerfCounterInfo23.key 131078
+perfCounter.PerfCounterInfo23.nameInfo.label Disk Read Rate
+perfCounter.PerfCounterInfo23.nameInfo.summary Rate of reading data from the disk
+perfCounter.PerfCounterInfo23.nameInfo.key read
+perfCounter.PerfCounterInfo23.groupInfo.label Disk
+perfCounter.PerfCounterInfo23.groupInfo.summary Disk
+perfCounter.PerfCounterInfo23.groupInfo.key disk
+perfCounter.PerfCounterInfo23.unitInfo.label KBps
+perfCounter.PerfCounterInfo23.unitInfo.summary Kilobytes per second
+perfCounter.PerfCounterInfo23.unitInfo.key kiloBytesPerSecond
+perfCounter.PerfCounterInfo23.rollupType average
+perfCounter.PerfCounterInfo23.statsType rate
+perfCounter.PerfCounterInfo24.key 131079
+perfCounter.PerfCounterInfo24.nameInfo.label Disk Write Rate
+perfCounter.PerfCounterInfo24.nameInfo.summary Rate of writing data to the disk
+perfCounter.PerfCounterInfo24.nameInfo.key write
+perfCounter.PerfCounterInfo24.groupInfo.label Disk
+perfCounter.PerfCounterInfo24.groupInfo.summary Disk
+perfCounter.PerfCounterInfo24.groupInfo.key disk
+perfCounter.PerfCounterInfo24.unitInfo.label KBps
+perfCounter.PerfCounterInfo24.unitInfo.summary Kilobytes per second
+perfCounter.PerfCounterInfo24.unitInfo.key kiloBytesPerSecond
+perfCounter.PerfCounterInfo24.rollupType average
+perfCounter.PerfCounterInfo24.statsType rate
+perfCounter.PerfCounterInfo25.key 131080
+perfCounter.PerfCounterInfo25.nameInfo.label Disk Commands Issued
+perfCounter.PerfCounterInfo25.nameInfo.summary Number of disk commands issued in the period
+perfCounter.PerfCounterInfo25.nameInfo.key commands
+perfCounter.PerfCounterInfo25.groupInfo.label Disk
+perfCounter.PerfCounterInfo25.groupInfo.summary Disk
+perfCounter.PerfCounterInfo25.groupInfo.key disk
+perfCounter.PerfCounterInfo25.unitInfo.label Number
+perfCounter.PerfCounterInfo25.unitInfo.summary Number
+perfCounter.PerfCounterInfo25.unitInfo.key number
+perfCounter.PerfCounterInfo25.rollupType summation
+perfCounter.PerfCounterInfo25.statsType delta
+perfCounter.PerfCounterInfo26.key 131081
+perfCounter.PerfCounterInfo26.nameInfo.label Disk Command Aborts
+perfCounter.PerfCounterInfo26.nameInfo.summary Number of disk commands aborted in the period
+perfCounter.PerfCounterInfo26.nameInfo.key commandsAborted
+perfCounter.PerfCounterInfo26.groupInfo.label Disk
+perfCounter.PerfCounterInfo26.groupInfo.summary Disk
+perfCounter.PerfCounterInfo26.groupInfo.key disk
+perfCounter.PerfCounterInfo26.unitInfo.label Number
+perfCounter.PerfCounterInfo26.unitInfo.summary Number
+perfCounter.PerfCounterInfo26.unitInfo.key number
+perfCounter.PerfCounterInfo26.rollupType summation
+perfCounter.PerfCounterInfo26.statsType delta
+perfCounter.PerfCounterInfo27.key 131082
+perfCounter.PerfCounterInfo27.nameInfo.label Disk Bus Resets
+perfCounter.PerfCounterInfo27.nameInfo.summary Number of bus resets in the period
+perfCounter.PerfCounterInfo27.nameInfo.key busResets
+perfCounter.PerfCounterInfo27.groupInfo.label Disk
+perfCounter.PerfCounterInfo27.groupInfo.summary Disk
+perfCounter.PerfCounterInfo27.groupInfo.key disk
+perfCounter.PerfCounterInfo27.unitInfo.label Number
+perfCounter.PerfCounterInfo27.unitInfo.summary Number
+perfCounter.PerfCounterInfo27.unitInfo.key number
+perfCounter.PerfCounterInfo27.rollupType summation
+perfCounter.PerfCounterInfo27.statsType delta
+perfCounter.PerfCounterInfo28.key 131083
+perfCounter.PerfCounterInfo28.nameInfo.label Physical Device Read Latency
+perfCounter.PerfCounterInfo28.nameInfo.summary The average time taken to complete a read from the physical device.
+perfCounter.PerfCounterInfo28.nameInfo.key deviceReadLatency
+perfCounter.PerfCounterInfo28.groupInfo.label Disk
+perfCounter.PerfCounterInfo28.groupInfo.summary Disk
+perfCounter.PerfCounterInfo28.groupInfo.key disk
+perfCounter.PerfCounterInfo28.unitInfo.label Millisecond
+perfCounter.PerfCounterInfo28.unitInfo.summary Millisecond
+perfCounter.PerfCounterInfo28.unitInfo.key millisecond
+perfCounter.PerfCounterInfo28.rollupType average
+perfCounter.PerfCounterInfo28.statsType absolute
+perfCounter.PerfCounterInfo29.key 131084
+perfCounter.PerfCounterInfo29.nameInfo.label Kernel Disk Read Latency
+perfCounter.PerfCounterInfo29.nameInfo.summary The average time spent in ESX Server VMKernel per read.
+perfCounter.PerfCounterInfo29.nameInfo.key kernelReadLatency
+perfCounter.PerfCounterInfo29.groupInfo.label Disk
+perfCounter.PerfCounterInfo29.groupInfo.summary Disk
+perfCounter.PerfCounterInfo29.groupInfo.key disk
+perfCounter.PerfCounterInfo29.unitInfo.label Millisecond
+perfCounter.PerfCounterInfo29.unitInfo.summary Millisecond
+perfCounter.PerfCounterInfo29.unitInfo.key millisecond
+perfCounter.PerfCounterInfo29.rollupType average
+perfCounter.PerfCounterInfo29.statsType absolute
+perfCounter.PerfCounterInfo30.key 131085
+perfCounter.PerfCounterInfo30.nameInfo.label Disk Read Latency
+perfCounter.PerfCounterInfo30.nameInfo.summary The average amount of time taken for a read from the perspective of a Guest OS. This is the sum of Kernel Read Latency and Physical Device Read Latency.
+perfCounter.PerfCounterInfo30.nameInfo.key totalReadLatency
+perfCounter.PerfCounterInfo30.groupInfo.label Disk
+perfCounter.PerfCounterInfo30.groupInfo.summary Disk
+perfCounter.PerfCounterInfo30.groupInfo.key disk
+perfCounter.PerfCounterInfo30.unitInfo.label Millisecond
+perfCounter.PerfCounterInfo30.unitInfo.summary Millisecond
+perfCounter.PerfCounterInfo30.unitInfo.key millisecond
+perfCounter.PerfCounterInfo30.rollupType average
+perfCounter.PerfCounterInfo30.statsType absolute
+perfCounter.PerfCounterInfo31.key 131086
+perfCounter.PerfCounterInfo31.nameInfo.label Queue Read Latency
+perfCounter.PerfCounterInfo31.nameInfo.summary The average time spent in the ESX Server VMKernel queue per read.
+perfCounter.PerfCounterInfo31.nameInfo.key queueReadLatency
+perfCounter.PerfCounterInfo31.groupInfo.label Disk
+perfCounter.PerfCounterInfo31.groupInfo.summary Disk
+perfCounter.PerfCounterInfo31.groupInfo.key disk
+perfCounter.PerfCounterInfo31.unitInfo.label Millisecond
+perfCounter.PerfCounterInfo31.unitInfo.summary Millisecond
+perfCounter.PerfCounterInfo31.unitInfo.key millisecond
+perfCounter.PerfCounterInfo31.rollupType average
+perfCounter.PerfCounterInfo31.statsType absolute
+perfCounter.PerfCounterInfo32.key 131087
+perfCounter.PerfCounterInfo32.nameInfo.label Physical Device Write Latency
+perfCounter.PerfCounterInfo32.nameInfo.summary The average time taken to complete a write from the physical device.
+perfCounter.PerfCounterInfo32.nameInfo.key deviceWriteLatency
+perfCounter.PerfCounterInfo32.groupInfo.label Disk
+perfCounter.PerfCounterInfo32.groupInfo.summary Disk
+perfCounter.PerfCounterInfo32.groupInfo.key disk
+perfCounter.PerfCounterInfo32.unitInfo.label Millisecond
+perfCounter.PerfCounterInfo32.unitInfo.summary Millisecond
+perfCounter.PerfCounterInfo32.unitInfo.key millisecond
+perfCounter.PerfCounterInfo32.rollupType average
+perfCounter.PerfCounterInfo32.statsType absolute
+perfCounter.PerfCounterInfo33.key 131088
+perfCounter.PerfCounterInfo33.nameInfo.label Kernel Disk Write Latency
+perfCounter.PerfCounterInfo33.nameInfo.summary The average time spent in ESX Server VMKernel per write.
+perfCounter.PerfCounterInfo33.nameInfo.key kernelWriteLatency
+perfCounter.PerfCounterInfo33.groupInfo.label Disk
+perfCounter.PerfCounterInfo33.groupInfo.summary Disk
+perfCounter.PerfCounterInfo33.groupInfo.key disk
+perfCounter.PerfCounterInfo33.unitInfo.label Millisecond
+perfCounter.PerfCounterInfo33.unitInfo.summary Millisecond
+perfCounter.PerfCounterInfo33.unitInfo.key millisecond
+perfCounter.PerfCounterInfo33.rollupType average
+perfCounter.PerfCounterInfo33.statsType absolute
+perfCounter.PerfCounterInfo34.key 131089
+perfCounter.PerfCounterInfo34.nameInfo.label Disk Write Latency
+perfCounter.PerfCounterInfo34.nameInfo.summary The average amount of time taken for a write from the perspective of a Guest OS. This is the sum of Kernel Write Latency and Physical Device Write Latency.
+perfCounter.PerfCounterInfo34.nameInfo.key totalWriteLatency
+perfCounter.PerfCounterInfo34.groupInfo.label Disk
+perfCounter.PerfCounterInfo34.groupInfo.summary Disk
+perfCounter.PerfCounterInfo34.groupInfo.key disk
+perfCounter.PerfCounterInfo34.unitInfo.label Millisecond
+perfCounter.PerfCounterInfo34.unitInfo.summary Millisecond
+perfCounter.PerfCounterInfo34.unitInfo.key millisecond
+perfCounter.PerfCounterInfo34.rollupType average
+perfCounter.PerfCounterInfo34.statsType absolute
+perfCounter.PerfCounterInfo35.key 131090
+perfCounter.PerfCounterInfo35.nameInfo.label Queue Write Latency
+perfCounter.PerfCounterInfo35.nameInfo.summary The average time spent in the ESX Server VMKernel queue per write.
+perfCounter.PerfCounterInfo35.nameInfo.key queueWriteLatency
+perfCounter.PerfCounterInfo35.groupInfo.label Disk
+perfCounter.PerfCounterInfo35.groupInfo.summary Disk
+perfCounter.PerfCounterInfo35.groupInfo.key disk
+perfCounter.PerfCounterInfo35.unitInfo.label Millisecond
+perfCounter.PerfCounterInfo35.unitInfo.summary Millisecond
+perfCounter.PerfCounterInfo35.unitInfo.key millisecond
+perfCounter.PerfCounterInfo35.rollupType average
+perfCounter.PerfCounterInfo35.statsType absolute
+perfCounter.PerfCounterInfo36.key 131091
+perfCounter.PerfCounterInfo36.nameInfo.label Physical Device Command Latency
+perfCounter.PerfCounterInfo36.nameInfo.summary The average time taken to complete a command from the physical device.
+perfCounter.PerfCounterInfo36.nameInfo.key deviceLatency
+perfCounter.PerfCounterInfo36.groupInfo.label Disk
+perfCounter.PerfCounterInfo36.groupInfo.summary Disk
+perfCounter.PerfCounterInfo36.groupInfo.key disk
+perfCounter.PerfCounterInfo36.unitInfo.label Millisecond
+perfCounter.PerfCounterInfo36.unitInfo.summary Millisecond
+perfCounter.PerfCounterInfo36.unitInfo.key millisecond
+perfCounter.PerfCounterInfo36.rollupType average
+perfCounter.PerfCounterInfo36.statsType absolute
+perfCounter.PerfCounterInfo37.key 131092
+perfCounter.PerfCounterInfo37.nameInfo.label Kernel Disk Command Latency
+perfCounter.PerfCounterInfo37.nameInfo.summary The average time spent in ESX Server VMKernel per command.
+perfCounter.PerfCounterInfo37.nameInfo.key kernelLatency
+perfCounter.PerfCounterInfo37.groupInfo.label Disk
+perfCounter.PerfCounterInfo37.groupInfo.summary Disk
+perfCounter.PerfCounterInfo37.groupInfo.key disk
+perfCounter.PerfCounterInfo37.unitInfo.label Millisecond
+perfCounter.PerfCounterInfo37.unitInfo.summary Millisecond
+perfCounter.PerfCounterInfo37.unitInfo.key millisecond
+perfCounter.PerfCounterInfo37.rollupType average
+perfCounter.PerfCounterInfo37.statsType absolute
+perfCounter.PerfCounterInfo38.key 131093
+perfCounter.PerfCounterInfo38.nameInfo.label Disk Command Latency
+perfCounter.PerfCounterInfo38.nameInfo.summary The average amount of time taken for a command from the perspective of a Guest OS. This is the sum of Kernel Command Latency and Physical Device Command Latency.
+perfCounter.PerfCounterInfo38.nameInfo.key totalLatency
+perfCounter.PerfCounterInfo38.groupInfo.label Disk
+perfCounter.PerfCounterInfo38.groupInfo.summary Disk
+perfCounter.PerfCounterInfo38.groupInfo.key disk
+perfCounter.PerfCounterInfo38.unitInfo.label Millisecond
+perfCounter.PerfCounterInfo38.unitInfo.summary Millisecond
+perfCounter.PerfCounterInfo38.unitInfo.key millisecond
+perfCounter.PerfCounterInfo38.rollupType average
+perfCounter.PerfCounterInfo38.statsType absolute
+perfCounter.PerfCounterInfo39.key 131094
+perfCounter.PerfCounterInfo39.nameInfo.label Queue Command Latency
+perfCounter.PerfCounterInfo39.nameInfo.summary The average time spent in the ESX Server VMKernel queue per command.
+perfCounter.PerfCounterInfo39.nameInfo.key queueLatency
+perfCounter.PerfCounterInfo39.groupInfo.label Disk
+perfCounter.PerfCounterInfo39.groupInfo.summary Disk
+perfCounter.PerfCounterInfo39.groupInfo.key disk
+perfCounter.PerfCounterInfo39.unitInfo.label Millisecond
+perfCounter.PerfCounterInfo39.unitInfo.summary Millisecond
+perfCounter.PerfCounterInfo39.unitInfo.key millisecond
+perfCounter.PerfCounterInfo39.rollupType average
+perfCounter.PerfCounterInfo39.statsType absolute
+perfCounter.PerfCounterInfo40.key 262144
+perfCounter.PerfCounterInfo40.nameInfo.label Uptime
+perfCounter.PerfCounterInfo40.nameInfo.summary Total time elapsed since last startup
+perfCounter.PerfCounterInfo40.nameInfo.key uptime
+perfCounter.PerfCounterInfo40.groupInfo.label System
+perfCounter.PerfCounterInfo40.groupInfo.summary System
+perfCounter.PerfCounterInfo40.groupInfo.key sys
+perfCounter.PerfCounterInfo40.unitInfo.label Second
+perfCounter.PerfCounterInfo40.unitInfo.summary Second
+perfCounter.PerfCounterInfo40.unitInfo.key second
+perfCounter.PerfCounterInfo40.rollupType latest
+perfCounter.PerfCounterInfo40.statsType absolute
+perfCounter.PerfCounterInfo41.key 262145
+perfCounter.PerfCounterInfo41.nameInfo.label Heartbeat
+perfCounter.PerfCounterInfo41.nameInfo.summary Number of heartbeats in this period
+perfCounter.PerfCounterInfo41.nameInfo.key heartbeat
+perfCounter.PerfCounterInfo41.groupInfo.label System
+perfCounter.PerfCounterInfo41.groupInfo.summary System
+perfCounter.PerfCounterInfo41.groupInfo.key sys
+perfCounter.PerfCounterInfo41.unitInfo.label Number
+perfCounter.PerfCounterInfo41.unitInfo.summary Number
+perfCounter.PerfCounterInfo41.unitInfo.key number
+perfCounter.PerfCounterInfo41.rollupType summation
+perfCounter.PerfCounterInfo41.statsType delta
+perfCounter.PerfCounterInfo42.key 262146
+perfCounter.PerfCounterInfo42.nameInfo.label Resource CPU Usage (None)
+perfCounter.PerfCounterInfo42.nameInfo.summary Resource CPU usage
+perfCounter.PerfCounterInfo42.nameInfo.key resourceCpuUsage
+perfCounter.PerfCounterInfo42.groupInfo.label System
+perfCounter.PerfCounterInfo42.groupInfo.summary System
+perfCounter.PerfCounterInfo42.groupInfo.key sys
+perfCounter.PerfCounterInfo42.unitInfo.label MHz
+perfCounter.PerfCounterInfo42.unitInfo.summary Megahertz
+perfCounter.PerfCounterInfo42.unitInfo.key megaHertz
+perfCounter.PerfCounterInfo42.rollupType none
+perfCounter.PerfCounterInfo42.statsType rate
+perfCounter.PerfCounterInfo42.associatedCounterId1 262147
+perfCounter.PerfCounterInfo42.associatedCounterId2 262149
+perfCounter.PerfCounterInfo42.associatedCounterId3 262148
+perfCounter.PerfCounterInfo43.key 262147
+perfCounter.PerfCounterInfo43.nameInfo.label Resource CPU Usage (Average)
+perfCounter.PerfCounterInfo43.nameInfo.summary Resource CPU usage
+perfCounter.PerfCounterInfo43.nameInfo.key resourceCpuUsage
+perfCounter.PerfCounterInfo43.groupInfo.label System
+perfCounter.PerfCounterInfo43.groupInfo.summary System
+perfCounter.PerfCounterInfo43.groupInfo.key sys
+perfCounter.PerfCounterInfo43.unitInfo.label MHz
+perfCounter.PerfCounterInfo43.unitInfo.summary Megahertz
+perfCounter.PerfCounterInfo43.unitInfo.key megaHertz
+perfCounter.PerfCounterInfo43.rollupType average
+perfCounter.PerfCounterInfo43.statsType rate
+perfCounter.PerfCounterInfo44.key 262148
+perfCounter.PerfCounterInfo44.nameInfo.label Resource CPU Usage (Maximum)
+perfCounter.PerfCounterInfo44.nameInfo.summary Resource CPU usage
+perfCounter.PerfCounterInfo44.nameInfo.key resourceCpuUsage
+perfCounter.PerfCounterInfo44.groupInfo.label System
+perfCounter.PerfCounterInfo44.groupInfo.summary System
+perfCounter.PerfCounterInfo44.groupInfo.key sys
+perfCounter.PerfCounterInfo44.unitInfo.label MHz
+perfCounter.PerfCounterInfo44.unitInfo.summary Megahertz
+perfCounter.PerfCounterInfo44.unitInfo.key megaHertz
+perfCounter.PerfCounterInfo44.rollupType maximum
+perfCounter.PerfCounterInfo44.statsType rate
+perfCounter.PerfCounterInfo45.key 262149
+perfCounter.PerfCounterInfo45.nameInfo.label Resource CPU Usage (Minimum)
+perfCounter.PerfCounterInfo45.nameInfo.summary Resource CPU usage
+perfCounter.PerfCounterInfo45.nameInfo.key resourceCpuUsage
+perfCounter.PerfCounterInfo45.groupInfo.label System
+perfCounter.PerfCounterInfo45.groupInfo.summary System
+perfCounter.PerfCounterInfo45.groupInfo.key sys
+perfCounter.PerfCounterInfo45.unitInfo.label MHz
+perfCounter.PerfCounterInfo45.unitInfo.summary Megahertz
+perfCounter.PerfCounterInfo45.unitInfo.key megaHertz
+perfCounter.PerfCounterInfo45.rollupType minimum
+perfCounter.PerfCounterInfo45.statsType rate
+perfCounter.PerfCounterInfo46.key 393216
+perfCounter.PerfCounterInfo46.nameInfo.label Memory Used (Average)
+perfCounter.PerfCounterInfo46.nameInfo.summary Memory Used as percentage of total configured or available memory
+perfCounter.PerfCounterInfo46.nameInfo.key memUsed
+perfCounter.PerfCounterInfo46.groupInfo.label Management Agent
+perfCounter.PerfCounterInfo46.groupInfo.summary Management Agent
+perfCounter.PerfCounterInfo46.groupInfo.key managementAgent
+perfCounter.PerfCounterInfo46.unitInfo.label KB
+perfCounter.PerfCounterInfo46.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo46.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo46.rollupType average
+perfCounter.PerfCounterInfo46.statsType absolute
+perfCounter.PerfCounterInfo47.key 393217
+perfCounter.PerfCounterInfo47.nameInfo.label Memory Swap Used (Average)
+perfCounter.PerfCounterInfo47.nameInfo.summary Amount of memory that is used by swap
+perfCounter.PerfCounterInfo47.nameInfo.key swapUsed
+perfCounter.PerfCounterInfo47.groupInfo.label Management Agent
+perfCounter.PerfCounterInfo47.groupInfo.summary Management Agent
+perfCounter.PerfCounterInfo47.groupInfo.key managementAgent
+perfCounter.PerfCounterInfo47.unitInfo.label KB
+perfCounter.PerfCounterInfo47.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo47.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo47.rollupType average
+perfCounter.PerfCounterInfo47.statsType absolute
+perfCounter.PerfCounterInfo48.key 393218
+perfCounter.PerfCounterInfo48.nameInfo.label Memory Swap In (Average)
+perfCounter.PerfCounterInfo48.nameInfo.summary Amount of memory that is swapped in
+perfCounter.PerfCounterInfo48.nameInfo.key swapIn
+perfCounter.PerfCounterInfo48.groupInfo.label Management Agent
+perfCounter.PerfCounterInfo48.groupInfo.summary Management Agent
+perfCounter.PerfCounterInfo48.groupInfo.key managementAgent
+perfCounter.PerfCounterInfo48.unitInfo.label KBps
+perfCounter.PerfCounterInfo48.unitInfo.summary Kilobytes per second
+perfCounter.PerfCounterInfo48.unitInfo.key kiloBytesPerSecond
+perfCounter.PerfCounterInfo48.rollupType average
+perfCounter.PerfCounterInfo48.statsType rate
+perfCounter.PerfCounterInfo49.key 393219
+perfCounter.PerfCounterInfo49.nameInfo.label Memory Swap Out (Average)
+perfCounter.PerfCounterInfo49.nameInfo.summary Amount of memory that is swapped out
+perfCounter.PerfCounterInfo49.nameInfo.key swapOut
+perfCounter.PerfCounterInfo49.groupInfo.label Management Agent
+perfCounter.PerfCounterInfo49.groupInfo.summary Management Agent
+perfCounter.PerfCounterInfo49.groupInfo.key managementAgent
+perfCounter.PerfCounterInfo49.unitInfo.label KBps
+perfCounter.PerfCounterInfo49.unitInfo.summary Kilobytes per second
+perfCounter.PerfCounterInfo49.unitInfo.key kiloBytesPerSecond
+perfCounter.PerfCounterInfo49.rollupType average
+perfCounter.PerfCounterInfo49.statsType rate
+perfCounter.PerfCounterInfo50.key 65536
+perfCounter.PerfCounterInfo50.nameInfo.label Memory Usage (None)
+perfCounter.PerfCounterInfo50.nameInfo.summary Memory usage as percentage of total configured or available memory
+perfCounter.PerfCounterInfo50.nameInfo.key usage
+perfCounter.PerfCounterInfo50.groupInfo.label Memory
+perfCounter.PerfCounterInfo50.groupInfo.summary Memory
+perfCounter.PerfCounterInfo50.groupInfo.key mem
+perfCounter.PerfCounterInfo50.unitInfo.label Percent
+perfCounter.PerfCounterInfo50.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo50.unitInfo.key percent
+perfCounter.PerfCounterInfo50.rollupType none
+perfCounter.PerfCounterInfo50.statsType absolute
+perfCounter.PerfCounterInfo50.associatedCounterId1 65537
+perfCounter.PerfCounterInfo50.associatedCounterId2 65539
+perfCounter.PerfCounterInfo50.associatedCounterId3 65538
+perfCounter.PerfCounterInfo51.key 65537
+perfCounter.PerfCounterInfo51.nameInfo.label Memory Usage (Average)
+perfCounter.PerfCounterInfo51.nameInfo.summary Memory usage as percentage of total configured or available memory
+perfCounter.PerfCounterInfo51.nameInfo.key usage
+perfCounter.PerfCounterInfo51.groupInfo.label Memory
+perfCounter.PerfCounterInfo51.groupInfo.summary Memory
+perfCounter.PerfCounterInfo51.groupInfo.key mem
+perfCounter.PerfCounterInfo51.unitInfo.label Percent
+perfCounter.PerfCounterInfo51.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo51.unitInfo.key percent
+perfCounter.PerfCounterInfo51.rollupType average
+perfCounter.PerfCounterInfo51.statsType absolute
+perfCounter.PerfCounterInfo52.key 65538
+perfCounter.PerfCounterInfo52.nameInfo.label Memory Usage (Maximum)
+perfCounter.PerfCounterInfo52.nameInfo.summary Memory usage as percentage of total configured or available memory
+perfCounter.PerfCounterInfo52.nameInfo.key usage
+perfCounter.PerfCounterInfo52.groupInfo.label Memory
+perfCounter.PerfCounterInfo52.groupInfo.summary Memory
+perfCounter.PerfCounterInfo52.groupInfo.key mem
+perfCounter.PerfCounterInfo52.unitInfo.label Percent
+perfCounter.PerfCounterInfo52.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo52.unitInfo.key percent
+perfCounter.PerfCounterInfo52.rollupType maximum
+perfCounter.PerfCounterInfo52.statsType absolute
+perfCounter.PerfCounterInfo53.key 65539
+perfCounter.PerfCounterInfo53.nameInfo.label Memory Usage (Minimum)
+perfCounter.PerfCounterInfo53.nameInfo.summary Memory usage as percentage of total configured or available memory
+perfCounter.PerfCounterInfo53.nameInfo.key usage
+perfCounter.PerfCounterInfo53.groupInfo.label Memory
+perfCounter.PerfCounterInfo53.groupInfo.summary Memory
+perfCounter.PerfCounterInfo53.groupInfo.key mem
+perfCounter.PerfCounterInfo53.unitInfo.label Percent
+perfCounter.PerfCounterInfo53.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo53.unitInfo.key percent
+perfCounter.PerfCounterInfo53.rollupType minimum
+perfCounter.PerfCounterInfo53.statsType absolute
+perfCounter.PerfCounterInfo54.key 65540
+perfCounter.PerfCounterInfo54.nameInfo.label Memory Granted (None)
+perfCounter.PerfCounterInfo54.nameInfo.summary Amount of memory granted. For hosts this can be represented on a per Virtual Machine basis as a stacked graph.
+perfCounter.PerfCounterInfo54.nameInfo.key granted
+perfCounter.PerfCounterInfo54.groupInfo.label Memory
+perfCounter.PerfCounterInfo54.groupInfo.summary Memory
+perfCounter.PerfCounterInfo54.groupInfo.key mem
+perfCounter.PerfCounterInfo54.unitInfo.label KB
+perfCounter.PerfCounterInfo54.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo54.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo54.rollupType none
+perfCounter.PerfCounterInfo54.statsType absolute
+perfCounter.PerfCounterInfo54.associatedCounterId1 65541
+perfCounter.PerfCounterInfo54.associatedCounterId2 65543
+perfCounter.PerfCounterInfo54.associatedCounterId3 65542
+perfCounter.PerfCounterInfo55.key 65541
+perfCounter.PerfCounterInfo55.nameInfo.label Memory Granted (Average)
+perfCounter.PerfCounterInfo55.nameInfo.summary Amount of memory granted. For hosts this can be represented on a per Virtual Machine basis as a stacked graph.
+perfCounter.PerfCounterInfo55.nameInfo.key granted
+perfCounter.PerfCounterInfo55.groupInfo.label Memory
+perfCounter.PerfCounterInfo55.groupInfo.summary Memory
+perfCounter.PerfCounterInfo55.groupInfo.key mem
+perfCounter.PerfCounterInfo55.unitInfo.label KB
+perfCounter.PerfCounterInfo55.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo55.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo55.rollupType average
+perfCounter.PerfCounterInfo55.statsType absolute
+perfCounter.PerfCounterInfo56.key 65542
+perfCounter.PerfCounterInfo56.nameInfo.label Memory Granted (Maximum)
+perfCounter.PerfCounterInfo56.nameInfo.summary Amount of memory granted. For hosts this can be represented on a per Virtual Machine basis as a stacked graph.
+perfCounter.PerfCounterInfo56.nameInfo.key granted
+perfCounter.PerfCounterInfo56.groupInfo.label Memory
+perfCounter.PerfCounterInfo56.groupInfo.summary Memory
+perfCounter.PerfCounterInfo56.groupInfo.key mem
+perfCounter.PerfCounterInfo56.unitInfo.label KB
+perfCounter.PerfCounterInfo56.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo56.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo56.rollupType maximum
+perfCounter.PerfCounterInfo56.statsType absolute
+perfCounter.PerfCounterInfo57.key 65543
+perfCounter.PerfCounterInfo57.nameInfo.label Memory Granted (Minimum)
+perfCounter.PerfCounterInfo57.nameInfo.summary Amount of memory granted. For hosts this can be represented on a per Virtual Machine basis as a stacked graph.
+perfCounter.PerfCounterInfo57.nameInfo.key granted
+perfCounter.PerfCounterInfo57.groupInfo.label Memory
+perfCounter.PerfCounterInfo57.groupInfo.summary Memory
+perfCounter.PerfCounterInfo57.groupInfo.key mem
+perfCounter.PerfCounterInfo57.unitInfo.label KB
+perfCounter.PerfCounterInfo57.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo57.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo57.rollupType minimum
+perfCounter.PerfCounterInfo57.statsType absolute
+perfCounter.PerfCounterInfo58.key 65544
+perfCounter.PerfCounterInfo58.nameInfo.label Memory Active (None)
+perfCounter.PerfCounterInfo58.nameInfo.summary Amount of memory that is actively used
+perfCounter.PerfCounterInfo58.nameInfo.key active
+perfCounter.PerfCounterInfo58.groupInfo.label Memory
+perfCounter.PerfCounterInfo58.groupInfo.summary Memory
+perfCounter.PerfCounterInfo58.groupInfo.key mem
+perfCounter.PerfCounterInfo58.unitInfo.label KB
+perfCounter.PerfCounterInfo58.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo58.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo58.rollupType none
+perfCounter.PerfCounterInfo58.statsType absolute
+perfCounter.PerfCounterInfo58.associatedCounterId1 65545
+perfCounter.PerfCounterInfo58.associatedCounterId2 65547
+perfCounter.PerfCounterInfo58.associatedCounterId3 65546
+perfCounter.PerfCounterInfo59.key 65545
+perfCounter.PerfCounterInfo59.nameInfo.label Memory Active (Average)
+perfCounter.PerfCounterInfo59.nameInfo.summary Amount of memory that is actively used
+perfCounter.PerfCounterInfo59.nameInfo.key active
+perfCounter.PerfCounterInfo59.groupInfo.label Memory
+perfCounter.PerfCounterInfo59.groupInfo.summary Memory
+perfCounter.PerfCounterInfo59.groupInfo.key mem
+perfCounter.PerfCounterInfo59.unitInfo.label KB
+perfCounter.PerfCounterInfo59.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo59.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo59.rollupType average
+perfCounter.PerfCounterInfo59.statsType absolute
+perfCounter.PerfCounterInfo60.key 65546
+perfCounter.PerfCounterInfo60.nameInfo.label Memory Active (Maximum)
+perfCounter.PerfCounterInfo60.nameInfo.summary Amount of memory that is actively used
+perfCounter.PerfCounterInfo60.nameInfo.key active
+perfCounter.PerfCounterInfo60.groupInfo.label Memory
+perfCounter.PerfCounterInfo60.groupInfo.summary Memory
+perfCounter.PerfCounterInfo60.groupInfo.key mem
+perfCounter.PerfCounterInfo60.unitInfo.label KB
+perfCounter.PerfCounterInfo60.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo60.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo60.rollupType maximum
+perfCounter.PerfCounterInfo60.statsType absolute
+perfCounter.PerfCounterInfo61.key 65547
+perfCounter.PerfCounterInfo61.nameInfo.label Memory Active (Minimum)
+perfCounter.PerfCounterInfo61.nameInfo.summary Amount of memory that is actively used
+perfCounter.PerfCounterInfo61.nameInfo.key active
+perfCounter.PerfCounterInfo61.groupInfo.label Memory
+perfCounter.PerfCounterInfo61.groupInfo.summary Memory
+perfCounter.PerfCounterInfo61.groupInfo.key mem
+perfCounter.PerfCounterInfo61.unitInfo.label KB
+perfCounter.PerfCounterInfo61.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo61.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo61.rollupType minimum
+perfCounter.PerfCounterInfo61.statsType absolute
+perfCounter.PerfCounterInfo62.key 65548
+perfCounter.PerfCounterInfo62.nameInfo.label Memory Shared (None)
+perfCounter.PerfCounterInfo62.nameInfo.summary Amount of memory that is shared
+perfCounter.PerfCounterInfo62.nameInfo.key shared
+perfCounter.PerfCounterInfo62.groupInfo.label Memory
+perfCounter.PerfCounterInfo62.groupInfo.summary Memory
+perfCounter.PerfCounterInfo62.groupInfo.key mem
+perfCounter.PerfCounterInfo62.unitInfo.label KB
+perfCounter.PerfCounterInfo62.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo62.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo62.rollupType none
+perfCounter.PerfCounterInfo62.statsType absolute
+perfCounter.PerfCounterInfo62.associatedCounterId1 65549
+perfCounter.PerfCounterInfo62.associatedCounterId2 65551
+perfCounter.PerfCounterInfo62.associatedCounterId3 65550
+perfCounter.PerfCounterInfo63.key 65549
+perfCounter.PerfCounterInfo63.nameInfo.label Memory Shared (Average)
+perfCounter.PerfCounterInfo63.nameInfo.summary Amount of memory that is shared
+perfCounter.PerfCounterInfo63.nameInfo.key shared
+perfCounter.PerfCounterInfo63.groupInfo.label Memory
+perfCounter.PerfCounterInfo63.groupInfo.summary Memory
+perfCounter.PerfCounterInfo63.groupInfo.key mem
+perfCounter.PerfCounterInfo63.unitInfo.label KB
+perfCounter.PerfCounterInfo63.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo63.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo63.rollupType average
+perfCounter.PerfCounterInfo63.statsType absolute
+perfCounter.PerfCounterInfo64.key 65550
+perfCounter.PerfCounterInfo64.nameInfo.label Memory Shared (Maximum)
+perfCounter.PerfCounterInfo64.nameInfo.summary Amount of memory that is shared
+perfCounter.PerfCounterInfo64.nameInfo.key shared
+perfCounter.PerfCounterInfo64.groupInfo.label Memory
+perfCounter.PerfCounterInfo64.groupInfo.summary Memory
+perfCounter.PerfCounterInfo64.groupInfo.key mem
+perfCounter.PerfCounterInfo64.unitInfo.label KB
+perfCounter.PerfCounterInfo64.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo64.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo64.rollupType maximum
+perfCounter.PerfCounterInfo64.statsType absolute
+perfCounter.PerfCounterInfo65.key 65551
+perfCounter.PerfCounterInfo65.nameInfo.label Memory Shared (Minimum)
+perfCounter.PerfCounterInfo65.nameInfo.summary Amount of memory that is shared
+perfCounter.PerfCounterInfo65.nameInfo.key shared
+perfCounter.PerfCounterInfo65.groupInfo.label Memory
+perfCounter.PerfCounterInfo65.groupInfo.summary Memory
+perfCounter.PerfCounterInfo65.groupInfo.key mem
+perfCounter.PerfCounterInfo65.unitInfo.label KB
+perfCounter.PerfCounterInfo65.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo65.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo65.rollupType minimum
+perfCounter.PerfCounterInfo65.statsType absolute
+perfCounter.PerfCounterInfo66.key 65552
+perfCounter.PerfCounterInfo66.nameInfo.label Memory Zero (None)
+perfCounter.PerfCounterInfo66.nameInfo.summary Amount of memory that is zeroed out
+perfCounter.PerfCounterInfo66.nameInfo.key zero
+perfCounter.PerfCounterInfo66.groupInfo.label Memory
+perfCounter.PerfCounterInfo66.groupInfo.summary Memory
+perfCounter.PerfCounterInfo66.groupInfo.key mem
+perfCounter.PerfCounterInfo66.unitInfo.label KB
+perfCounter.PerfCounterInfo66.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo66.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo66.rollupType none
+perfCounter.PerfCounterInfo66.statsType absolute
+perfCounter.PerfCounterInfo66.associatedCounterId1 65553
+perfCounter.PerfCounterInfo66.associatedCounterId2 65555
+perfCounter.PerfCounterInfo66.associatedCounterId3 65554
+perfCounter.PerfCounterInfo67.key 65553
+perfCounter.PerfCounterInfo67.nameInfo.label Memory Zero (Average)
+perfCounter.PerfCounterInfo67.nameInfo.summary Amount of memory that is zeroed out
+perfCounter.PerfCounterInfo67.nameInfo.key zero
+perfCounter.PerfCounterInfo67.groupInfo.label Memory
+perfCounter.PerfCounterInfo67.groupInfo.summary Memory
+perfCounter.PerfCounterInfo67.groupInfo.key mem
+perfCounter.PerfCounterInfo67.unitInfo.label KB
+perfCounter.PerfCounterInfo67.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo67.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo67.rollupType average
+perfCounter.PerfCounterInfo67.statsType absolute
+perfCounter.PerfCounterInfo68.key 65554
+perfCounter.PerfCounterInfo68.nameInfo.label Memory Zero (Maximum)
+perfCounter.PerfCounterInfo68.nameInfo.summary Amount of memory that is zeroed out
+perfCounter.PerfCounterInfo68.nameInfo.key zero
+perfCounter.PerfCounterInfo68.groupInfo.label Memory
+perfCounter.PerfCounterInfo68.groupInfo.summary Memory
+perfCounter.PerfCounterInfo68.groupInfo.key mem
+perfCounter.PerfCounterInfo68.unitInfo.label KB
+perfCounter.PerfCounterInfo68.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo68.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo68.rollupType maximum
+perfCounter.PerfCounterInfo68.statsType absolute
+perfCounter.PerfCounterInfo69.key 65555
+perfCounter.PerfCounterInfo69.nameInfo.label Memory Zero (Minimum)
+perfCounter.PerfCounterInfo69.nameInfo.summary Amount of memory that is zeroed out
+perfCounter.PerfCounterInfo69.nameInfo.key zero
+perfCounter.PerfCounterInfo69.groupInfo.label Memory
+perfCounter.PerfCounterInfo69.groupInfo.summary Memory
+perfCounter.PerfCounterInfo69.groupInfo.key mem
+perfCounter.PerfCounterInfo69.unitInfo.label KB
+perfCounter.PerfCounterInfo69.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo69.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo69.rollupType minimum
+perfCounter.PerfCounterInfo69.statsType absolute
+perfCounter.PerfCounterInfo70.key 65556
+perfCounter.PerfCounterInfo70.nameInfo.label Memory Unreserved (None)
+perfCounter.PerfCounterInfo70.nameInfo.summary Amount of memory that is unreserved
+perfCounter.PerfCounterInfo70.nameInfo.key unreserved
+perfCounter.PerfCounterInfo70.groupInfo.label Memory
+perfCounter.PerfCounterInfo70.groupInfo.summary Memory
+perfCounter.PerfCounterInfo70.groupInfo.key mem
+perfCounter.PerfCounterInfo70.unitInfo.label KB
+perfCounter.PerfCounterInfo70.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo70.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo70.rollupType none
+perfCounter.PerfCounterInfo70.statsType absolute
+perfCounter.PerfCounterInfo70.associatedCounterId1 65557
+perfCounter.PerfCounterInfo70.associatedCounterId2 65559
+perfCounter.PerfCounterInfo70.associatedCounterId3 65558
+perfCounter.PerfCounterInfo71.key 65557
+perfCounter.PerfCounterInfo71.nameInfo.label Memory Unreserved (Average)
+perfCounter.PerfCounterInfo71.nameInfo.summary Amount of memory that is unreserved
+perfCounter.PerfCounterInfo71.nameInfo.key unreserved
+perfCounter.PerfCounterInfo71.groupInfo.label Memory
+perfCounter.PerfCounterInfo71.groupInfo.summary Memory
+perfCounter.PerfCounterInfo71.groupInfo.key mem
+perfCounter.PerfCounterInfo71.unitInfo.label KB
+perfCounter.PerfCounterInfo71.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo71.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo71.rollupType average
+perfCounter.PerfCounterInfo71.statsType absolute
+perfCounter.PerfCounterInfo72.key 65558
+perfCounter.PerfCounterInfo72.nameInfo.label Memory Unreserved (Maximum)
+perfCounter.PerfCounterInfo72.nameInfo.summary Amount of memory that is unreserved
+perfCounter.PerfCounterInfo72.nameInfo.key unreserved
+perfCounter.PerfCounterInfo72.groupInfo.label Memory
+perfCounter.PerfCounterInfo72.groupInfo.summary Memory
+perfCounter.PerfCounterInfo72.groupInfo.key mem
+perfCounter.PerfCounterInfo72.unitInfo.label KB
+perfCounter.PerfCounterInfo72.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo72.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo72.rollupType maximum
+perfCounter.PerfCounterInfo72.statsType absolute
+perfCounter.PerfCounterInfo73.key 65559
+perfCounter.PerfCounterInfo73.nameInfo.label Memory Unreserved (Minimum)
+perfCounter.PerfCounterInfo73.nameInfo.summary Amount of memory that is unreserved
+perfCounter.PerfCounterInfo73.nameInfo.key unreserved
+perfCounter.PerfCounterInfo73.groupInfo.label Memory
+perfCounter.PerfCounterInfo73.groupInfo.summary Memory
+perfCounter.PerfCounterInfo73.groupInfo.key mem
+perfCounter.PerfCounterInfo73.unitInfo.label KB
+perfCounter.PerfCounterInfo73.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo73.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo73.rollupType minimum
+perfCounter.PerfCounterInfo73.statsType absolute
+perfCounter.PerfCounterInfo74.key 65560
+perfCounter.PerfCounterInfo74.nameInfo.label Memory Swap Used (None)
+perfCounter.PerfCounterInfo74.nameInfo.summary Amount of memory that is used by swap
+perfCounter.PerfCounterInfo74.nameInfo.key swapused
+perfCounter.PerfCounterInfo74.groupInfo.label Memory
+perfCounter.PerfCounterInfo74.groupInfo.summary Memory
+perfCounter.PerfCounterInfo74.groupInfo.key mem
+perfCounter.PerfCounterInfo74.unitInfo.label KB
+perfCounter.PerfCounterInfo74.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo74.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo74.rollupType none
+perfCounter.PerfCounterInfo74.statsType absolute
+perfCounter.PerfCounterInfo74.associatedCounterId1 65561
+perfCounter.PerfCounterInfo74.associatedCounterId2 65563
+perfCounter.PerfCounterInfo74.associatedCounterId3 65562
+perfCounter.PerfCounterInfo75.key 196608
+perfCounter.PerfCounterInfo75.nameInfo.label Network Usage (None)
+perfCounter.PerfCounterInfo75.nameInfo.summary Aggregated network performance statistics. For hosts this can be represented on a per Virtual Machine basis as a stacked graph
+perfCounter.PerfCounterInfo75.nameInfo.key usage
+perfCounter.PerfCounterInfo75.groupInfo.label Network
+perfCounter.PerfCounterInfo75.groupInfo.summary Network
+perfCounter.PerfCounterInfo75.groupInfo.key net
+perfCounter.PerfCounterInfo75.unitInfo.label KBps
+perfCounter.PerfCounterInfo75.unitInfo.summary Kilobytes per second
+perfCounter.PerfCounterInfo75.unitInfo.key kiloBytesPerSecond
+perfCounter.PerfCounterInfo75.rollupType none
+perfCounter.PerfCounterInfo75.statsType rate
+perfCounter.PerfCounterInfo75.associatedCounterId1 196609
+perfCounter.PerfCounterInfo75.associatedCounterId2 196611
+perfCounter.PerfCounterInfo75.associatedCounterId3 196610
+perfCounter.PerfCounterInfo76.key 65561
+perfCounter.PerfCounterInfo76.nameInfo.label Memory Swap Used (Average)
+perfCounter.PerfCounterInfo76.nameInfo.summary Amount of memory that is used by swap
+perfCounter.PerfCounterInfo76.nameInfo.key swapused
+perfCounter.PerfCounterInfo76.groupInfo.label Memory
+perfCounter.PerfCounterInfo76.groupInfo.summary Memory
+perfCounter.PerfCounterInfo76.groupInfo.key mem
+perfCounter.PerfCounterInfo76.unitInfo.label KB
+perfCounter.PerfCounterInfo76.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo76.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo76.rollupType average
+perfCounter.PerfCounterInfo76.statsType absolute
+perfCounter.PerfCounterInfo77.key 196609
+perfCounter.PerfCounterInfo77.nameInfo.label Network Usage (Average)
+perfCounter.PerfCounterInfo77.nameInfo.summary Aggregated network performance statistics. For hosts this can be represented on a per Virtual Machine basis as a stacked graph
+perfCounter.PerfCounterInfo77.nameInfo.key usage
+perfCounter.PerfCounterInfo77.groupInfo.label Network
+perfCounter.PerfCounterInfo77.groupInfo.summary Network
+perfCounter.PerfCounterInfo77.groupInfo.key net
+perfCounter.PerfCounterInfo77.unitInfo.label KBps
+perfCounter.PerfCounterInfo77.unitInfo.summary Kilobytes per second
+perfCounter.PerfCounterInfo77.unitInfo.key kiloBytesPerSecond
+perfCounter.PerfCounterInfo77.rollupType average
+perfCounter.PerfCounterInfo77.statsType rate
+perfCounter.PerfCounterInfo78.key 65562
+perfCounter.PerfCounterInfo78.nameInfo.label Memory Swap Used (Maximum)
+perfCounter.PerfCounterInfo78.nameInfo.summary Amount of memory that is used by swap
+perfCounter.PerfCounterInfo78.nameInfo.key swapused
+perfCounter.PerfCounterInfo78.groupInfo.label Memory
+perfCounter.PerfCounterInfo78.groupInfo.summary Memory
+perfCounter.PerfCounterInfo78.groupInfo.key mem
+perfCounter.PerfCounterInfo78.unitInfo.label KB
+perfCounter.PerfCounterInfo78.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo78.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo78.rollupType maximum
+perfCounter.PerfCounterInfo78.statsType absolute
+perfCounter.PerfCounterInfo79.key 196610
+perfCounter.PerfCounterInfo79.nameInfo.label Network Usage (Maximum)
+perfCounter.PerfCounterInfo79.nameInfo.summary Aggregated network performance statistics. For hosts this can be represented on a per Virtual Machine basis as a stacked graph
+perfCounter.PerfCounterInfo79.nameInfo.key usage
+perfCounter.PerfCounterInfo79.groupInfo.label Network
+perfCounter.PerfCounterInfo79.groupInfo.summary Network
+perfCounter.PerfCounterInfo79.groupInfo.key net
+perfCounter.PerfCounterInfo79.unitInfo.label KBps
+perfCounter.PerfCounterInfo79.unitInfo.summary Kilobytes per second
+perfCounter.PerfCounterInfo79.unitInfo.key kiloBytesPerSecond
+perfCounter.PerfCounterInfo79.rollupType maximum
+perfCounter.PerfCounterInfo79.statsType rate
+perfCounter.PerfCounterInfo80.key 65563
+perfCounter.PerfCounterInfo80.nameInfo.label Memory Swap Used (Minimum)
+perfCounter.PerfCounterInfo80.nameInfo.summary Amount of memory that is used by swap
+perfCounter.PerfCounterInfo80.nameInfo.key swapused
+perfCounter.PerfCounterInfo80.groupInfo.label Memory
+perfCounter.PerfCounterInfo80.groupInfo.summary Memory
+perfCounter.PerfCounterInfo80.groupInfo.key mem
+perfCounter.PerfCounterInfo80.unitInfo.label KB
+perfCounter.PerfCounterInfo80.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo80.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo80.rollupType minimum
+perfCounter.PerfCounterInfo80.statsType absolute
+perfCounter.PerfCounterInfo81.key 196611
+perfCounter.PerfCounterInfo81.nameInfo.label Network Usage (Minimum)
+perfCounter.PerfCounterInfo81.nameInfo.summary Aggregated network performance statistics. For hosts this can be represented on a per Virtual Machine basis as a stacked graph
+perfCounter.PerfCounterInfo81.nameInfo.key usage
+perfCounter.PerfCounterInfo81.groupInfo.label Network
+perfCounter.PerfCounterInfo81.groupInfo.summary Network
+perfCounter.PerfCounterInfo81.groupInfo.key net
+perfCounter.PerfCounterInfo81.unitInfo.label KBps
+perfCounter.PerfCounterInfo81.unitInfo.summary Kilobytes per second
+perfCounter.PerfCounterInfo81.unitInfo.key kiloBytesPerSecond
+perfCounter.PerfCounterInfo81.rollupType minimum
+perfCounter.PerfCounterInfo81.statsType rate
+perfCounter.PerfCounterInfo82.key 196612
+perfCounter.PerfCounterInfo82.nameInfo.label Network Packets Received
+perfCounter.PerfCounterInfo82.nameInfo.summary Number of packets received in the period
+perfCounter.PerfCounterInfo82.nameInfo.key packetsRx
+perfCounter.PerfCounterInfo82.groupInfo.label Network
+perfCounter.PerfCounterInfo82.groupInfo.summary Network
+perfCounter.PerfCounterInfo82.groupInfo.key net
+perfCounter.PerfCounterInfo82.unitInfo.label Number
+perfCounter.PerfCounterInfo82.unitInfo.summary Number
+perfCounter.PerfCounterInfo82.unitInfo.key number
+perfCounter.PerfCounterInfo82.rollupType summation
+perfCounter.PerfCounterInfo82.statsType delta
+perfCounter.PerfCounterInfo83.key 196613
+perfCounter.PerfCounterInfo83.nameInfo.label Network Packets Transmitted
+perfCounter.PerfCounterInfo83.nameInfo.summary Number of packets transmitted in the period
+perfCounter.PerfCounterInfo83.nameInfo.key packetsTx
+perfCounter.PerfCounterInfo83.groupInfo.label Network
+perfCounter.PerfCounterInfo83.groupInfo.summary Network
+perfCounter.PerfCounterInfo83.groupInfo.key net
+perfCounter.PerfCounterInfo83.unitInfo.label Number
+perfCounter.PerfCounterInfo83.unitInfo.summary Number
+perfCounter.PerfCounterInfo83.unitInfo.key number
+perfCounter.PerfCounterInfo83.rollupType summation
+perfCounter.PerfCounterInfo83.statsType delta
+perfCounter.PerfCounterInfo84.key 196614
+perfCounter.PerfCounterInfo84.nameInfo.label Network Data Receive Rate
+perfCounter.PerfCounterInfo84.nameInfo.summary Rate at which data is received
+perfCounter.PerfCounterInfo84.nameInfo.key received
+perfCounter.PerfCounterInfo84.groupInfo.label Network
+perfCounter.PerfCounterInfo84.groupInfo.summary Network
+perfCounter.PerfCounterInfo84.groupInfo.key net
+perfCounter.PerfCounterInfo84.unitInfo.label KBps
+perfCounter.PerfCounterInfo84.unitInfo.summary Kilobytes per second
+perfCounter.PerfCounterInfo84.unitInfo.key kiloBytesPerSecond
+perfCounter.PerfCounterInfo84.rollupType average
+perfCounter.PerfCounterInfo84.statsType rate
+perfCounter.PerfCounterInfo85.key 196615
+perfCounter.PerfCounterInfo85.nameInfo.label Network Data Transmit Rate
+perfCounter.PerfCounterInfo85.nameInfo.summary Rate at which data is transmitted
+perfCounter.PerfCounterInfo85.nameInfo.key transmitted
+perfCounter.PerfCounterInfo85.groupInfo.label Network
+perfCounter.PerfCounterInfo85.groupInfo.summary Network
+perfCounter.PerfCounterInfo85.groupInfo.key net
+perfCounter.PerfCounterInfo85.unitInfo.label KBps
+perfCounter.PerfCounterInfo85.unitInfo.summary Kilobytes per second
+perfCounter.PerfCounterInfo85.unitInfo.key kiloBytesPerSecond
+perfCounter.PerfCounterInfo85.rollupType average
+perfCounter.PerfCounterInfo85.statsType rate
+perfCounter.PerfCounterInfo86.key 65568
+perfCounter.PerfCounterInfo86.nameInfo.label Memory Shared Common (None)
+perfCounter.PerfCounterInfo86.nameInfo.summary Amount of memory that is shared by common
+perfCounter.PerfCounterInfo86.nameInfo.key sharedcommon
+perfCounter.PerfCounterInfo86.groupInfo.label Memory
+perfCounter.PerfCounterInfo86.groupInfo.summary Memory
+perfCounter.PerfCounterInfo86.groupInfo.key mem
+perfCounter.PerfCounterInfo86.unitInfo.label KB
+perfCounter.PerfCounterInfo86.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo86.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo86.rollupType none
+perfCounter.PerfCounterInfo86.statsType absolute
+perfCounter.PerfCounterInfo86.associatedCounterId1 65569
+perfCounter.PerfCounterInfo86.associatedCounterId2 65571
+perfCounter.PerfCounterInfo86.associatedCounterId3 65570
+perfCounter.PerfCounterInfo87.key 65569
+perfCounter.PerfCounterInfo87.nameInfo.label Memory Shared Common (Average)
+perfCounter.PerfCounterInfo87.nameInfo.summary Amount of memory that is shared by common
+perfCounter.PerfCounterInfo87.nameInfo.key sharedcommon
+perfCounter.PerfCounterInfo87.groupInfo.label Memory
+perfCounter.PerfCounterInfo87.groupInfo.summary Memory
+perfCounter.PerfCounterInfo87.groupInfo.key mem
+perfCounter.PerfCounterInfo87.unitInfo.label KB
+perfCounter.PerfCounterInfo87.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo87.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo87.rollupType average
+perfCounter.PerfCounterInfo87.statsType absolute
+perfCounter.PerfCounterInfo88.key 65570
+perfCounter.PerfCounterInfo88.nameInfo.label Memory Shared Common (Maximum)
+perfCounter.PerfCounterInfo88.nameInfo.summary Amount of memory that is shared by common
+perfCounter.PerfCounterInfo88.nameInfo.key sharedcommon
+perfCounter.PerfCounterInfo88.groupInfo.label Memory
+perfCounter.PerfCounterInfo88.groupInfo.summary Memory
+perfCounter.PerfCounterInfo88.groupInfo.key mem
+perfCounter.PerfCounterInfo88.unitInfo.label KB
+perfCounter.PerfCounterInfo88.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo88.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo88.rollupType maximum
+perfCounter.PerfCounterInfo88.statsType absolute
+perfCounter.PerfCounterInfo89.key 65571
+perfCounter.PerfCounterInfo89.nameInfo.label Memory Shared Common (Minimum)
+perfCounter.PerfCounterInfo89.nameInfo.summary Amount of memory that is shared by common
+perfCounter.PerfCounterInfo89.nameInfo.key sharedcommon
+perfCounter.PerfCounterInfo89.groupInfo.label Memory
+perfCounter.PerfCounterInfo89.groupInfo.summary Memory
+perfCounter.PerfCounterInfo89.groupInfo.key mem
+perfCounter.PerfCounterInfo89.unitInfo.label KB
+perfCounter.PerfCounterInfo89.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo89.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo89.rollupType minimum
+perfCounter.PerfCounterInfo89.statsType absolute
+perfCounter.PerfCounterInfo90.key 65572
+perfCounter.PerfCounterInfo90.nameInfo.label Memory Heap (None)
+perfCounter.PerfCounterInfo90.nameInfo.summary Amount of memory allocated for heap
+perfCounter.PerfCounterInfo90.nameInfo.key heap
+perfCounter.PerfCounterInfo90.groupInfo.label Memory
+perfCounter.PerfCounterInfo90.groupInfo.summary Memory
+perfCounter.PerfCounterInfo90.groupInfo.key mem
+perfCounter.PerfCounterInfo90.unitInfo.label KB
+perfCounter.PerfCounterInfo90.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo90.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo90.rollupType none
+perfCounter.PerfCounterInfo90.statsType absolute
+perfCounter.PerfCounterInfo90.associatedCounterId1 65573
+perfCounter.PerfCounterInfo90.associatedCounterId2 65575
+perfCounter.PerfCounterInfo90.associatedCounterId3 65574
+perfCounter.PerfCounterInfo91.key 65573
+perfCounter.PerfCounterInfo91.nameInfo.label Memory Heap (Average)
+perfCounter.PerfCounterInfo91.nameInfo.summary Amount of memory allocated for heap
+perfCounter.PerfCounterInfo91.nameInfo.key heap
+perfCounter.PerfCounterInfo91.groupInfo.label Memory
+perfCounter.PerfCounterInfo91.groupInfo.summary Memory
+perfCounter.PerfCounterInfo91.groupInfo.key mem
+perfCounter.PerfCounterInfo91.unitInfo.label KB
+perfCounter.PerfCounterInfo91.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo91.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo91.rollupType average
+perfCounter.PerfCounterInfo91.statsType absolute
+perfCounter.PerfCounterInfo92.key 65574
+perfCounter.PerfCounterInfo92.nameInfo.label Memory Heap (Maximum)
+perfCounter.PerfCounterInfo92.nameInfo.summary Amount of memory allocated for heap
+perfCounter.PerfCounterInfo92.nameInfo.key heap
+perfCounter.PerfCounterInfo92.groupInfo.label Memory
+perfCounter.PerfCounterInfo92.groupInfo.summary Memory
+perfCounter.PerfCounterInfo92.groupInfo.key mem
+perfCounter.PerfCounterInfo92.unitInfo.label KB
+perfCounter.PerfCounterInfo92.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo92.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo92.rollupType maximum
+perfCounter.PerfCounterInfo92.statsType absolute
+perfCounter.PerfCounterInfo93.key 65575
+perfCounter.PerfCounterInfo93.nameInfo.label Memory Heap (Minimum)
+perfCounter.PerfCounterInfo93.nameInfo.summary Amount of memory allocated for heap
+perfCounter.PerfCounterInfo93.nameInfo.key heap
+perfCounter.PerfCounterInfo93.groupInfo.label Memory
+perfCounter.PerfCounterInfo93.groupInfo.summary Memory
+perfCounter.PerfCounterInfo93.groupInfo.key mem
+perfCounter.PerfCounterInfo93.unitInfo.label KB
+perfCounter.PerfCounterInfo93.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo93.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo93.rollupType minimum
+perfCounter.PerfCounterInfo93.statsType absolute
+perfCounter.PerfCounterInfo94.key 65576
+perfCounter.PerfCounterInfo94.nameInfo.label Memory Heap Free (None)
+perfCounter.PerfCounterInfo94.nameInfo.summary Free space in memory heap
+perfCounter.PerfCounterInfo94.nameInfo.key heapfree
+perfCounter.PerfCounterInfo94.groupInfo.label Memory
+perfCounter.PerfCounterInfo94.groupInfo.summary Memory
+perfCounter.PerfCounterInfo94.groupInfo.key mem
+perfCounter.PerfCounterInfo94.unitInfo.label KB
+perfCounter.PerfCounterInfo94.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo94.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo94.rollupType none
+perfCounter.PerfCounterInfo94.statsType absolute
+perfCounter.PerfCounterInfo94.associatedCounterId1 65577
+perfCounter.PerfCounterInfo94.associatedCounterId2 65579
+perfCounter.PerfCounterInfo94.associatedCounterId3 65578
+perfCounter.PerfCounterInfo95.key 65577
+perfCounter.PerfCounterInfo95.nameInfo.label Memory Heap Free (Average)
+perfCounter.PerfCounterInfo95.nameInfo.summary Free space in memory heap
+perfCounter.PerfCounterInfo95.nameInfo.key heapfree
+perfCounter.PerfCounterInfo95.groupInfo.label Memory
+perfCounter.PerfCounterInfo95.groupInfo.summary Memory
+perfCounter.PerfCounterInfo95.groupInfo.key mem
+perfCounter.PerfCounterInfo95.unitInfo.label KB
+perfCounter.PerfCounterInfo95.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo95.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo95.rollupType average
+perfCounter.PerfCounterInfo95.statsType absolute
+perfCounter.PerfCounterInfo96.key 65578
+perfCounter.PerfCounterInfo96.nameInfo.label Memory Heap Free (Maximum)
+perfCounter.PerfCounterInfo96.nameInfo.summary Free space in memory heap
+perfCounter.PerfCounterInfo96.nameInfo.key heapfree
+perfCounter.PerfCounterInfo96.groupInfo.label Memory
+perfCounter.PerfCounterInfo96.groupInfo.summary Memory
+perfCounter.PerfCounterInfo96.groupInfo.key mem
+perfCounter.PerfCounterInfo96.unitInfo.label KB
+perfCounter.PerfCounterInfo96.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo96.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo96.rollupType maximum
+perfCounter.PerfCounterInfo96.statsType absolute
+perfCounter.PerfCounterInfo97.key 65579
+perfCounter.PerfCounterInfo97.nameInfo.label Memory Heap Free (Minimum)
+perfCounter.PerfCounterInfo97.nameInfo.summary Free space in memory heap
+perfCounter.PerfCounterInfo97.nameInfo.key heapfree
+perfCounter.PerfCounterInfo97.groupInfo.label Memory
+perfCounter.PerfCounterInfo97.groupInfo.summary Memory
+perfCounter.PerfCounterInfo97.groupInfo.key mem
+perfCounter.PerfCounterInfo97.unitInfo.label KB
+perfCounter.PerfCounterInfo97.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo97.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo97.rollupType minimum
+perfCounter.PerfCounterInfo97.statsType absolute
+perfCounter.PerfCounterInfo98.key 65580
+perfCounter.PerfCounterInfo98.nameInfo.label Memory State
+perfCounter.PerfCounterInfo98.nameInfo.summary Memory state
+perfCounter.PerfCounterInfo98.nameInfo.key state
+perfCounter.PerfCounterInfo98.groupInfo.label Memory
+perfCounter.PerfCounterInfo98.groupInfo.summary Memory
+perfCounter.PerfCounterInfo98.groupInfo.key mem
+perfCounter.PerfCounterInfo98.unitInfo.label Number
+perfCounter.PerfCounterInfo98.unitInfo.summary Number
+perfCounter.PerfCounterInfo98.unitInfo.key number
+perfCounter.PerfCounterInfo98.rollupType latest
+perfCounter.PerfCounterInfo98.statsType absolute
+perfCounter.PerfCounterInfo99.key 65581
+perfCounter.PerfCounterInfo99.nameInfo.label Memory Balloon (None)
+perfCounter.PerfCounterInfo99.nameInfo.summary Amount of memory used by memory control
+perfCounter.PerfCounterInfo99.nameInfo.key vmmemctl
+perfCounter.PerfCounterInfo99.groupInfo.label Memory
+perfCounter.PerfCounterInfo99.groupInfo.summary Memory
+perfCounter.PerfCounterInfo99.groupInfo.key mem
+perfCounter.PerfCounterInfo99.unitInfo.label KB
+perfCounter.PerfCounterInfo99.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo99.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo99.rollupType none
+perfCounter.PerfCounterInfo99.statsType absolute
+perfCounter.PerfCounterInfo99.associatedCounterId1 65582
+perfCounter.PerfCounterInfo99.associatedCounterId2 65584
+perfCounter.PerfCounterInfo99.associatedCounterId3 65583
+perfCounter.PerfCounterInfo100.key 65582
+perfCounter.PerfCounterInfo100.nameInfo.label Memory Balloon (Average)
+perfCounter.PerfCounterInfo100.nameInfo.summary Amount of memory used by memory control
+perfCounter.PerfCounterInfo100.nameInfo.key vmmemctl
+perfCounter.PerfCounterInfo100.groupInfo.label Memory
+perfCounter.PerfCounterInfo100.groupInfo.summary Memory
+perfCounter.PerfCounterInfo100.groupInfo.key mem
+perfCounter.PerfCounterInfo100.unitInfo.label KB
+perfCounter.PerfCounterInfo100.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo100.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo100.rollupType average
+perfCounter.PerfCounterInfo100.statsType absolute
+perfCounter.PerfCounterInfo101.key 65583
+perfCounter.PerfCounterInfo101.nameInfo.label Memory Balloon (Maximum)
+perfCounter.PerfCounterInfo101.nameInfo.summary Amount of memory used by memory control
+perfCounter.PerfCounterInfo101.nameInfo.key vmmemctl
+perfCounter.PerfCounterInfo101.groupInfo.label Memory
+perfCounter.PerfCounterInfo101.groupInfo.summary Memory
+perfCounter.PerfCounterInfo101.groupInfo.key mem
+perfCounter.PerfCounterInfo101.unitInfo.label KB
+perfCounter.PerfCounterInfo101.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo101.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo101.rollupType maximum
+perfCounter.PerfCounterInfo101.statsType absolute
+perfCounter.PerfCounterInfo102.key 65584
+perfCounter.PerfCounterInfo102.nameInfo.label Memory Balloon (Minimum)
+perfCounter.PerfCounterInfo102.nameInfo.summary Amount of memory used by memory control
+perfCounter.PerfCounterInfo102.nameInfo.key vmmemctl
+perfCounter.PerfCounterInfo102.groupInfo.label Memory
+perfCounter.PerfCounterInfo102.groupInfo.summary Memory
+perfCounter.PerfCounterInfo102.groupInfo.key mem
+perfCounter.PerfCounterInfo102.unitInfo.label KB
+perfCounter.PerfCounterInfo102.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo102.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo102.rollupType minimum
+perfCounter.PerfCounterInfo102.statsType absolute
+perfCounter.PerfCounterInfo103.key 65585
+perfCounter.PerfCounterInfo103.nameInfo.label Memory Overhead (None)
+perfCounter.PerfCounterInfo103.nameInfo.summary Amount of additional host memory allocated to the virtual machine
+perfCounter.PerfCounterInfo103.nameInfo.key overhead
+perfCounter.PerfCounterInfo103.groupInfo.label Memory
+perfCounter.PerfCounterInfo103.groupInfo.summary Memory
+perfCounter.PerfCounterInfo103.groupInfo.key mem
+perfCounter.PerfCounterInfo103.unitInfo.label KB
+perfCounter.PerfCounterInfo103.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo103.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo103.rollupType none
+perfCounter.PerfCounterInfo103.statsType absolute
+perfCounter.PerfCounterInfo103.associatedCounterId1 65586
+perfCounter.PerfCounterInfo103.associatedCounterId2 65588
+perfCounter.PerfCounterInfo103.associatedCounterId3 65587
+perfCounter.PerfCounterInfo104.key 327680
+perfCounter.PerfCounterInfo104.nameInfo.label CPU Active (1 min. average)
+perfCounter.PerfCounterInfo104.nameInfo.summary CPU active average over 1 minute
+perfCounter.PerfCounterInfo104.nameInfo.key actav1
+perfCounter.PerfCounterInfo104.groupInfo.label Resource Group CPU
+perfCounter.PerfCounterInfo104.groupInfo.summary Resource Group CPU
+perfCounter.PerfCounterInfo104.groupInfo.key rescpu
+perfCounter.PerfCounterInfo104.unitInfo.label Percent
+perfCounter.PerfCounterInfo104.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo104.unitInfo.key percent
+perfCounter.PerfCounterInfo104.rollupType latest
+perfCounter.PerfCounterInfo104.statsType absolute
+perfCounter.PerfCounterInfo105.key 65586
+perfCounter.PerfCounterInfo105.nameInfo.label Memory Overhead (Average)
+perfCounter.PerfCounterInfo105.nameInfo.summary Amount of additional host memory allocated to the virtual machine
+perfCounter.PerfCounterInfo105.nameInfo.key overhead
+perfCounter.PerfCounterInfo105.groupInfo.label Memory
+perfCounter.PerfCounterInfo105.groupInfo.summary Memory
+perfCounter.PerfCounterInfo105.groupInfo.key mem
+perfCounter.PerfCounterInfo105.unitInfo.label KB
+perfCounter.PerfCounterInfo105.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo105.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo105.rollupType average
+perfCounter.PerfCounterInfo105.statsType absolute
+perfCounter.PerfCounterInfo106.key 327681
+perfCounter.PerfCounterInfo106.nameInfo.label CPU Active (1 min. peak)
+perfCounter.PerfCounterInfo106.nameInfo.summary CPU active peak over 1 minute
+perfCounter.PerfCounterInfo106.nameInfo.key actpk1
+perfCounter.PerfCounterInfo106.groupInfo.label Resource Group CPU
+perfCounter.PerfCounterInfo106.groupInfo.summary Resource Group CPU
+perfCounter.PerfCounterInfo106.groupInfo.key rescpu
+perfCounter.PerfCounterInfo106.unitInfo.label Percent
+perfCounter.PerfCounterInfo106.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo106.unitInfo.key percent
+perfCounter.PerfCounterInfo106.rollupType latest
+perfCounter.PerfCounterInfo106.statsType absolute
+perfCounter.PerfCounterInfo107.key 65587
+perfCounter.PerfCounterInfo107.nameInfo.label Memory Overhead (Maximum)
+perfCounter.PerfCounterInfo107.nameInfo.summary Amount of additional host memory allocated to the virtual machine
+perfCounter.PerfCounterInfo107.nameInfo.key overhead
+perfCounter.PerfCounterInfo107.groupInfo.label Memory
+perfCounter.PerfCounterInfo107.groupInfo.summary Memory
+perfCounter.PerfCounterInfo107.groupInfo.key mem
+perfCounter.PerfCounterInfo107.unitInfo.label KB
+perfCounter.PerfCounterInfo107.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo107.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo107.rollupType maximum
+perfCounter.PerfCounterInfo107.statsType absolute
+perfCounter.PerfCounterInfo108.key 327682
+perfCounter.PerfCounterInfo108.nameInfo.label CPU Running (1 min. average)
+perfCounter.PerfCounterInfo108.nameInfo.summary CPU running average over 1 minute
+perfCounter.PerfCounterInfo108.nameInfo.key runav1
+perfCounter.PerfCounterInfo108.groupInfo.label Resource Group CPU
+perfCounter.PerfCounterInfo108.groupInfo.summary Resource Group CPU
+perfCounter.PerfCounterInfo108.groupInfo.key rescpu
+perfCounter.PerfCounterInfo108.unitInfo.label Percent
+perfCounter.PerfCounterInfo108.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo108.unitInfo.key percent
+perfCounter.PerfCounterInfo108.rollupType latest
+perfCounter.PerfCounterInfo108.statsType absolute
+perfCounter.PerfCounterInfo109.key 65588
+perfCounter.PerfCounterInfo109.nameInfo.label Memory Overhead (Minimum)
+perfCounter.PerfCounterInfo109.nameInfo.summary Amount of additional host memory allocated to the virtual machine
+perfCounter.PerfCounterInfo109.nameInfo.key overhead
+perfCounter.PerfCounterInfo109.groupInfo.label Memory
+perfCounter.PerfCounterInfo109.groupInfo.summary Memory
+perfCounter.PerfCounterInfo109.groupInfo.key mem
+perfCounter.PerfCounterInfo109.unitInfo.label KB
+perfCounter.PerfCounterInfo109.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo109.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo109.rollupType minimum
+perfCounter.PerfCounterInfo109.statsType absolute
+perfCounter.PerfCounterInfo110.key 327683
+perfCounter.PerfCounterInfo110.nameInfo.label CPU Active (5 min. average)
+perfCounter.PerfCounterInfo110.nameInfo.summary CPU active average over 5 minutes
+perfCounter.PerfCounterInfo110.nameInfo.key actav5
+perfCounter.PerfCounterInfo110.groupInfo.label Resource Group CPU
+perfCounter.PerfCounterInfo110.groupInfo.summary Resource Group CPU
+perfCounter.PerfCounterInfo110.groupInfo.key rescpu
+perfCounter.PerfCounterInfo110.unitInfo.label Percent
+perfCounter.PerfCounterInfo110.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo110.unitInfo.key percent
+perfCounter.PerfCounterInfo110.rollupType latest
+perfCounter.PerfCounterInfo110.statsType absolute
+perfCounter.PerfCounterInfo111.key 65589
+perfCounter.PerfCounterInfo111.nameInfo.label Memory Reserved Capacity
+perfCounter.PerfCounterInfo111.nameInfo.summary Amount of memory reserved by the virtual machines
+perfCounter.PerfCounterInfo111.nameInfo.key reservedCapacity
+perfCounter.PerfCounterInfo111.groupInfo.label Memory
+perfCounter.PerfCounterInfo111.groupInfo.summary Memory
+perfCounter.PerfCounterInfo111.groupInfo.key mem
+perfCounter.PerfCounterInfo111.unitInfo.label MB
+perfCounter.PerfCounterInfo111.unitInfo.summary Megabytes
+perfCounter.PerfCounterInfo111.unitInfo.key megaBytes
+perfCounter.PerfCounterInfo111.rollupType average
+perfCounter.PerfCounterInfo111.statsType absolute
+perfCounter.PerfCounterInfo112.key 327684
+perfCounter.PerfCounterInfo112.nameInfo.label CPU Active (5 min. peak)
+perfCounter.PerfCounterInfo112.nameInfo.summary CPU active peak over 5 minutes
+perfCounter.PerfCounterInfo112.nameInfo.key actpk5
+perfCounter.PerfCounterInfo112.groupInfo.label Resource Group CPU
+perfCounter.PerfCounterInfo112.groupInfo.summary Resource Group CPU
+perfCounter.PerfCounterInfo112.groupInfo.key rescpu
+perfCounter.PerfCounterInfo112.unitInfo.label Percent
+perfCounter.PerfCounterInfo112.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo112.unitInfo.key percent
+perfCounter.PerfCounterInfo112.rollupType latest
+perfCounter.PerfCounterInfo112.statsType absolute
+perfCounter.PerfCounterInfo113.key 65590
+perfCounter.PerfCounterInfo113.nameInfo.label Memory Swapped (None)
+perfCounter.PerfCounterInfo113.nameInfo.summary Amount of memory that is swapped
+perfCounter.PerfCounterInfo113.nameInfo.key swapped
+perfCounter.PerfCounterInfo113.groupInfo.label Memory
+perfCounter.PerfCounterInfo113.groupInfo.summary Memory
+perfCounter.PerfCounterInfo113.groupInfo.key mem
+perfCounter.PerfCounterInfo113.unitInfo.label KB
+perfCounter.PerfCounterInfo113.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo113.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo113.rollupType none
+perfCounter.PerfCounterInfo113.statsType absolute
+perfCounter.PerfCounterInfo113.associatedCounterId1 65591
+perfCounter.PerfCounterInfo113.associatedCounterId2 65593
+perfCounter.PerfCounterInfo113.associatedCounterId3 65592
+perfCounter.PerfCounterInfo114.key 327685
+perfCounter.PerfCounterInfo114.nameInfo.label CPU Running (5 min. average)
+perfCounter.PerfCounterInfo114.nameInfo.summary CPU running average over 5 minutes
+perfCounter.PerfCounterInfo114.nameInfo.key runav5
+perfCounter.PerfCounterInfo114.groupInfo.label Resource Group CPU
+perfCounter.PerfCounterInfo114.groupInfo.summary Resource Group CPU
+perfCounter.PerfCounterInfo114.groupInfo.key rescpu
+perfCounter.PerfCounterInfo114.unitInfo.label Percent
+perfCounter.PerfCounterInfo114.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo114.unitInfo.key percent
+perfCounter.PerfCounterInfo114.rollupType latest
+perfCounter.PerfCounterInfo114.statsType absolute
+perfCounter.PerfCounterInfo115.key 65591
+perfCounter.PerfCounterInfo115.nameInfo.label Memory Swapped (Average)
+perfCounter.PerfCounterInfo115.nameInfo.summary Amount of memory that is swapped
+perfCounter.PerfCounterInfo115.nameInfo.key swapped
+perfCounter.PerfCounterInfo115.groupInfo.label Memory
+perfCounter.PerfCounterInfo115.groupInfo.summary Memory
+perfCounter.PerfCounterInfo115.groupInfo.key mem
+perfCounter.PerfCounterInfo115.unitInfo.label KB
+perfCounter.PerfCounterInfo115.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo115.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo115.rollupType average
+perfCounter.PerfCounterInfo115.statsType absolute
+perfCounter.PerfCounterInfo116.key 327686
+perfCounter.PerfCounterInfo116.nameInfo.label CPU Active (15 min. average)
+perfCounter.PerfCounterInfo116.nameInfo.summary CPU active average over 15 minutes
+perfCounter.PerfCounterInfo116.nameInfo.key actav15
+perfCounter.PerfCounterInfo116.groupInfo.label Resource Group CPU
+perfCounter.PerfCounterInfo116.groupInfo.summary Resource Group CPU
+perfCounter.PerfCounterInfo116.groupInfo.key rescpu
+perfCounter.PerfCounterInfo116.unitInfo.label Percent
+perfCounter.PerfCounterInfo116.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo116.unitInfo.key percent
+perfCounter.PerfCounterInfo116.rollupType latest
+perfCounter.PerfCounterInfo116.statsType absolute
+perfCounter.PerfCounterInfo117.key 65592
+perfCounter.PerfCounterInfo117.nameInfo.label Memory Swapped (Maximum)
+perfCounter.PerfCounterInfo117.nameInfo.summary Amount of memory that is swapped
+perfCounter.PerfCounterInfo117.nameInfo.key swapped
+perfCounter.PerfCounterInfo117.groupInfo.label Memory
+perfCounter.PerfCounterInfo117.groupInfo.summary Memory
+perfCounter.PerfCounterInfo117.groupInfo.key mem
+perfCounter.PerfCounterInfo117.unitInfo.label KB
+perfCounter.PerfCounterInfo117.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo117.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo117.rollupType maximum
+perfCounter.PerfCounterInfo117.statsType absolute
+perfCounter.PerfCounterInfo118.key 327687
+perfCounter.PerfCounterInfo118.nameInfo.label CPU Active (15 min. peak)
+perfCounter.PerfCounterInfo118.nameInfo.summary CPU active peak over 15 minutes
+perfCounter.PerfCounterInfo118.nameInfo.key actpk15
+perfCounter.PerfCounterInfo118.groupInfo.label Resource Group CPU
+perfCounter.PerfCounterInfo118.groupInfo.summary Resource Group CPU
+perfCounter.PerfCounterInfo118.groupInfo.key rescpu
+perfCounter.PerfCounterInfo118.unitInfo.label Percent
+perfCounter.PerfCounterInfo118.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo118.unitInfo.key percent
+perfCounter.PerfCounterInfo118.rollupType latest
+perfCounter.PerfCounterInfo118.statsType absolute
+perfCounter.PerfCounterInfo119.key 65593
+perfCounter.PerfCounterInfo119.nameInfo.label Memory Swapped (Minimum)
+perfCounter.PerfCounterInfo119.nameInfo.summary Amount of memory that is swapped
+perfCounter.PerfCounterInfo119.nameInfo.key swapped
+perfCounter.PerfCounterInfo119.groupInfo.label Memory
+perfCounter.PerfCounterInfo119.groupInfo.summary Memory
+perfCounter.PerfCounterInfo119.groupInfo.key mem
+perfCounter.PerfCounterInfo119.unitInfo.label KB
+perfCounter.PerfCounterInfo119.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo119.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo119.rollupType minimum
+perfCounter.PerfCounterInfo119.statsType absolute
+perfCounter.PerfCounterInfo120.key 327688
+perfCounter.PerfCounterInfo120.nameInfo.label CPU Running (15 min. average)
+perfCounter.PerfCounterInfo120.nameInfo.summary CPU running average over 15 minutes
+perfCounter.PerfCounterInfo120.nameInfo.key runav15
+perfCounter.PerfCounterInfo120.groupInfo.label Resource Group CPU
+perfCounter.PerfCounterInfo120.groupInfo.summary Resource Group CPU
+perfCounter.PerfCounterInfo120.groupInfo.key rescpu
+perfCounter.PerfCounterInfo120.unitInfo.label Percent
+perfCounter.PerfCounterInfo120.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo120.unitInfo.key percent
+perfCounter.PerfCounterInfo120.rollupType latest
+perfCounter.PerfCounterInfo120.statsType absolute
+perfCounter.PerfCounterInfo121.key 65594
+perfCounter.PerfCounterInfo121.nameInfo.label Memory Swap Target (None)
+perfCounter.PerfCounterInfo121.nameInfo.summary Amount of memory that can be swapped
+perfCounter.PerfCounterInfo121.nameInfo.key swaptarget
+perfCounter.PerfCounterInfo121.groupInfo.label Memory
+perfCounter.PerfCounterInfo121.groupInfo.summary Memory
+perfCounter.PerfCounterInfo121.groupInfo.key mem
+perfCounter.PerfCounterInfo121.unitInfo.label KB
+perfCounter.PerfCounterInfo121.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo121.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo121.rollupType none
+perfCounter.PerfCounterInfo121.statsType absolute
+perfCounter.PerfCounterInfo121.associatedCounterId1 65595
+perfCounter.PerfCounterInfo121.associatedCounterId2 65597
+perfCounter.PerfCounterInfo121.associatedCounterId3 65596
+perfCounter.PerfCounterInfo122.key 327689
+perfCounter.PerfCounterInfo122.nameInfo.label CPU Running (1 min. peak)
+perfCounter.PerfCounterInfo122.nameInfo.summary CPU running peak over 1 minute
+perfCounter.PerfCounterInfo122.nameInfo.key runpk1
+perfCounter.PerfCounterInfo122.groupInfo.label Resource Group CPU
+perfCounter.PerfCounterInfo122.groupInfo.summary Resource Group CPU
+perfCounter.PerfCounterInfo122.groupInfo.key rescpu
+perfCounter.PerfCounterInfo122.unitInfo.label Percent
+perfCounter.PerfCounterInfo122.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo122.unitInfo.key percent
+perfCounter.PerfCounterInfo122.rollupType latest
+perfCounter.PerfCounterInfo122.statsType absolute
+perfCounter.PerfCounterInfo123.key 65595
+perfCounter.PerfCounterInfo123.nameInfo.label Memory Swap Target (Average)
+perfCounter.PerfCounterInfo123.nameInfo.summary Amount of memory that can be swapped
+perfCounter.PerfCounterInfo123.nameInfo.key swaptarget
+perfCounter.PerfCounterInfo123.groupInfo.label Memory
+perfCounter.PerfCounterInfo123.groupInfo.summary Memory
+perfCounter.PerfCounterInfo123.groupInfo.key mem
+perfCounter.PerfCounterInfo123.unitInfo.label KB
+perfCounter.PerfCounterInfo123.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo123.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo123.rollupType average
+perfCounter.PerfCounterInfo123.statsType absolute
+perfCounter.PerfCounterInfo124.key 327690
+perfCounter.PerfCounterInfo124.nameInfo.label CPU Throttled (1 min. average)
+perfCounter.PerfCounterInfo124.nameInfo.summary Amount of CPU resources over the limit that were refused, average over 1 minute
+perfCounter.PerfCounterInfo124.nameInfo.key maxLimited1
+perfCounter.PerfCounterInfo124.groupInfo.label Resource Group CPU
+perfCounter.PerfCounterInfo124.groupInfo.summary Resource Group CPU
+perfCounter.PerfCounterInfo124.groupInfo.key rescpu
+perfCounter.PerfCounterInfo124.unitInfo.label Percent
+perfCounter.PerfCounterInfo124.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo124.unitInfo.key percent
+perfCounter.PerfCounterInfo124.rollupType latest
+perfCounter.PerfCounterInfo124.statsType absolute
+perfCounter.PerfCounterInfo125.key 65596
+perfCounter.PerfCounterInfo125.nameInfo.label Memory Swap Target (Maximum)
+perfCounter.PerfCounterInfo125.nameInfo.summary Amount of memory that can be swapped
+perfCounter.PerfCounterInfo125.nameInfo.key swaptarget
+perfCounter.PerfCounterInfo125.groupInfo.label Memory
+perfCounter.PerfCounterInfo125.groupInfo.summary Memory
+perfCounter.PerfCounterInfo125.groupInfo.key mem
+perfCounter.PerfCounterInfo125.unitInfo.label KB
+perfCounter.PerfCounterInfo125.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo125.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo125.rollupType maximum
+perfCounter.PerfCounterInfo125.statsType absolute
+perfCounter.PerfCounterInfo126.key 327691
+perfCounter.PerfCounterInfo126.nameInfo.label CPU Running (5 min. peak)
+perfCounter.PerfCounterInfo126.nameInfo.summary CPU running peak over 5 minutes
+perfCounter.PerfCounterInfo126.nameInfo.key runpk5
+perfCounter.PerfCounterInfo126.groupInfo.label Resource Group CPU
+perfCounter.PerfCounterInfo126.groupInfo.summary Resource Group CPU
+perfCounter.PerfCounterInfo126.groupInfo.key rescpu
+perfCounter.PerfCounterInfo126.unitInfo.label Percent
+perfCounter.PerfCounterInfo126.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo126.unitInfo.key percent
+perfCounter.PerfCounterInfo126.rollupType latest
+perfCounter.PerfCounterInfo126.statsType absolute
+perfCounter.PerfCounterInfo127.key 65597
+perfCounter.PerfCounterInfo127.nameInfo.label Memory Swap Target (Minimum)
+perfCounter.PerfCounterInfo127.nameInfo.summary Amount of memory that can be swapped
+perfCounter.PerfCounterInfo127.nameInfo.key swaptarget
+perfCounter.PerfCounterInfo127.groupInfo.label Memory
+perfCounter.PerfCounterInfo127.groupInfo.summary Memory
+perfCounter.PerfCounterInfo127.groupInfo.key mem
+perfCounter.PerfCounterInfo127.unitInfo.label KB
+perfCounter.PerfCounterInfo127.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo127.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo127.rollupType minimum
+perfCounter.PerfCounterInfo127.statsType absolute
+perfCounter.PerfCounterInfo128.key 327692
+perfCounter.PerfCounterInfo128.nameInfo.label CPU Throttled (5 min. average)
+perfCounter.PerfCounterInfo128.nameInfo.summary Amount of CPU resources over the limit that were refused, average over 5 minutes
+perfCounter.PerfCounterInfo128.nameInfo.key maxLimited5
+perfCounter.PerfCounterInfo128.groupInfo.label Resource Group CPU
+perfCounter.PerfCounterInfo128.groupInfo.summary Resource Group CPU
+perfCounter.PerfCounterInfo128.groupInfo.key rescpu
+perfCounter.PerfCounterInfo128.unitInfo.label Percent
+perfCounter.PerfCounterInfo128.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo128.unitInfo.key percent
+perfCounter.PerfCounterInfo128.rollupType latest
+perfCounter.PerfCounterInfo128.statsType absolute
+perfCounter.PerfCounterInfo129.key 65598
+perfCounter.PerfCounterInfo129.nameInfo.label Memory Swap In (None)
+perfCounter.PerfCounterInfo129.nameInfo.summary Amount of memory that is swapped in
+perfCounter.PerfCounterInfo129.nameInfo.key swapin
+perfCounter.PerfCounterInfo129.groupInfo.label Memory
+perfCounter.PerfCounterInfo129.groupInfo.summary Memory
+perfCounter.PerfCounterInfo129.groupInfo.key mem
+perfCounter.PerfCounterInfo129.unitInfo.label KB
+perfCounter.PerfCounterInfo129.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo129.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo129.rollupType none
+perfCounter.PerfCounterInfo129.statsType absolute
+perfCounter.PerfCounterInfo129.associatedCounterId1 65599
+perfCounter.PerfCounterInfo129.associatedCounterId2 65601
+perfCounter.PerfCounterInfo129.associatedCounterId3 65600
+perfCounter.PerfCounterInfo130.key 327693
+perfCounter.PerfCounterInfo130.nameInfo.label CPU Running (15 min. peak)
+perfCounter.PerfCounterInfo130.nameInfo.summary CPU running peak over 15 minutes
+perfCounter.PerfCounterInfo130.nameInfo.key runpk15
+perfCounter.PerfCounterInfo130.groupInfo.label Resource Group CPU
+perfCounter.PerfCounterInfo130.groupInfo.summary Resource Group CPU
+perfCounter.PerfCounterInfo130.groupInfo.key rescpu
+perfCounter.PerfCounterInfo130.unitInfo.label Percent
+perfCounter.PerfCounterInfo130.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo130.unitInfo.key percent
+perfCounter.PerfCounterInfo130.rollupType latest
+perfCounter.PerfCounterInfo130.statsType absolute
+perfCounter.PerfCounterInfo131.key 65599
+perfCounter.PerfCounterInfo131.nameInfo.label Memory Swap In (Average)
+perfCounter.PerfCounterInfo131.nameInfo.summary Amount of memory that is swapped in
+perfCounter.PerfCounterInfo131.nameInfo.key swapin
+perfCounter.PerfCounterInfo131.groupInfo.label Memory
+perfCounter.PerfCounterInfo131.groupInfo.summary Memory
+perfCounter.PerfCounterInfo131.groupInfo.key mem
+perfCounter.PerfCounterInfo131.unitInfo.label KB
+perfCounter.PerfCounterInfo131.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo131.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo131.rollupType average
+perfCounter.PerfCounterInfo131.statsType absolute
+perfCounter.PerfCounterInfo132.key 327694
+perfCounter.PerfCounterInfo132.nameInfo.label CPU Throttled (15 min. average)
+perfCounter.PerfCounterInfo132.nameInfo.summary Amount of CPU resources over the limit that were refused, average over 15 minutes
+perfCounter.PerfCounterInfo132.nameInfo.key maxLimited15
+perfCounter.PerfCounterInfo132.groupInfo.label Resource Group CPU
+perfCounter.PerfCounterInfo132.groupInfo.summary Resource Group CPU
+perfCounter.PerfCounterInfo132.groupInfo.key rescpu
+perfCounter.PerfCounterInfo132.unitInfo.label Percent
+perfCounter.PerfCounterInfo132.unitInfo.summary Percentages
+perfCounter.PerfCounterInfo132.unitInfo.key percent
+perfCounter.PerfCounterInfo132.rollupType latest
+perfCounter.PerfCounterInfo132.statsType absolute
+perfCounter.PerfCounterInfo133.key 65600
+perfCounter.PerfCounterInfo133.nameInfo.label Memory Swap In (Maximum)
+perfCounter.PerfCounterInfo133.nameInfo.summary Amount of memory that is swapped in
+perfCounter.PerfCounterInfo133.nameInfo.key swapin
+perfCounter.PerfCounterInfo133.groupInfo.label Memory
+perfCounter.PerfCounterInfo133.groupInfo.summary Memory
+perfCounter.PerfCounterInfo133.groupInfo.key mem
+perfCounter.PerfCounterInfo133.unitInfo.label KB
+perfCounter.PerfCounterInfo133.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo133.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo133.rollupType maximum
+perfCounter.PerfCounterInfo133.statsType absolute
+perfCounter.PerfCounterInfo134.key 327695
+perfCounter.PerfCounterInfo134.nameInfo.label Group CPU Sample Count
+perfCounter.PerfCounterInfo134.nameInfo.summary group CPU sample count
+perfCounter.PerfCounterInfo134.nameInfo.key sampleCount
+perfCounter.PerfCounterInfo134.groupInfo.label Resource Group CPU
+perfCounter.PerfCounterInfo134.groupInfo.summary Resource Group CPU
+perfCounter.PerfCounterInfo134.groupInfo.key rescpu
+perfCounter.PerfCounterInfo134.unitInfo.label Number
+perfCounter.PerfCounterInfo134.unitInfo.summary Number
+perfCounter.PerfCounterInfo134.unitInfo.key number
+perfCounter.PerfCounterInfo134.rollupType latest
+perfCounter.PerfCounterInfo134.statsType absolute
+perfCounter.PerfCounterInfo135.key 65601
+perfCounter.PerfCounterInfo135.nameInfo.label Memory Swap In (Minimum)
+perfCounter.PerfCounterInfo135.nameInfo.summary Amount of memory that is swapped in
+perfCounter.PerfCounterInfo135.nameInfo.key swapin
+perfCounter.PerfCounterInfo135.groupInfo.label Memory
+perfCounter.PerfCounterInfo135.groupInfo.summary Memory
+perfCounter.PerfCounterInfo135.groupInfo.key mem
+perfCounter.PerfCounterInfo135.unitInfo.label KB
+perfCounter.PerfCounterInfo135.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo135.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo135.rollupType minimum
+perfCounter.PerfCounterInfo135.statsType absolute
+perfCounter.PerfCounterInfo136.key 327696
+perfCounter.PerfCounterInfo136.nameInfo.label Group CPU Sample Period
+perfCounter.PerfCounterInfo136.nameInfo.summary group CPU sample period
+perfCounter.PerfCounterInfo136.nameInfo.key samplePeriod
+perfCounter.PerfCounterInfo136.groupInfo.label Resource Group CPU
+perfCounter.PerfCounterInfo136.groupInfo.summary Resource Group CPU
+perfCounter.PerfCounterInfo136.groupInfo.key rescpu
+perfCounter.PerfCounterInfo136.unitInfo.label Millisecond
+perfCounter.PerfCounterInfo136.unitInfo.summary Millisecond
+perfCounter.PerfCounterInfo136.unitInfo.key millisecond
+perfCounter.PerfCounterInfo136.rollupType latest
+perfCounter.PerfCounterInfo136.statsType absolute
+perfCounter.PerfCounterInfo137.key 65602
+perfCounter.PerfCounterInfo137.nameInfo.label Memory Swap Out (None)
+perfCounter.PerfCounterInfo137.nameInfo.summary Amount of memory that is swapped out
+perfCounter.PerfCounterInfo137.nameInfo.key swapout
+perfCounter.PerfCounterInfo137.groupInfo.label Memory
+perfCounter.PerfCounterInfo137.groupInfo.summary Memory
+perfCounter.PerfCounterInfo137.groupInfo.key mem
+perfCounter.PerfCounterInfo137.unitInfo.label KB
+perfCounter.PerfCounterInfo137.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo137.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo137.rollupType none
+perfCounter.PerfCounterInfo137.statsType absolute
+perfCounter.PerfCounterInfo137.associatedCounterId1 65603
+perfCounter.PerfCounterInfo137.associatedCounterId2 65605
+perfCounter.PerfCounterInfo137.associatedCounterId3 65604
+perfCounter.PerfCounterInfo138.key 65603
+perfCounter.PerfCounterInfo138.nameInfo.label Memory Swap Out (Average)
+perfCounter.PerfCounterInfo138.nameInfo.summary Amount of memory that is swapped out
+perfCounter.PerfCounterInfo138.nameInfo.key swapout
+perfCounter.PerfCounterInfo138.groupInfo.label Memory
+perfCounter.PerfCounterInfo138.groupInfo.summary Memory
+perfCounter.PerfCounterInfo138.groupInfo.key mem
+perfCounter.PerfCounterInfo138.unitInfo.label KB
+perfCounter.PerfCounterInfo138.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo138.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo138.rollupType average
+perfCounter.PerfCounterInfo138.statsType absolute
+perfCounter.PerfCounterInfo139.key 65604
+perfCounter.PerfCounterInfo139.nameInfo.label Memory Swap Out (Maximum)
+perfCounter.PerfCounterInfo139.nameInfo.summary Amount of memory that is swapped out
+perfCounter.PerfCounterInfo139.nameInfo.key swapout
+perfCounter.PerfCounterInfo139.groupInfo.label Memory
+perfCounter.PerfCounterInfo139.groupInfo.summary Memory
+perfCounter.PerfCounterInfo139.groupInfo.key mem
+perfCounter.PerfCounterInfo139.unitInfo.label KB
+perfCounter.PerfCounterInfo139.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo139.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo139.rollupType maximum
+perfCounter.PerfCounterInfo139.statsType absolute
+perfCounter.PerfCounterInfo140.key 65605
+perfCounter.PerfCounterInfo140.nameInfo.label Memory Swap Out (Minimum)
+perfCounter.PerfCounterInfo140.nameInfo.summary Amount of memory that is swapped out
+perfCounter.PerfCounterInfo140.nameInfo.key swapout
+perfCounter.PerfCounterInfo140.groupInfo.label Memory
+perfCounter.PerfCounterInfo140.groupInfo.summary Memory
+perfCounter.PerfCounterInfo140.groupInfo.key mem
+perfCounter.PerfCounterInfo140.unitInfo.label KB
+perfCounter.PerfCounterInfo140.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo140.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo140.rollupType minimum
+perfCounter.PerfCounterInfo140.statsType absolute
+perfCounter.PerfCounterInfo141.key 65606
+perfCounter.PerfCounterInfo141.nameInfo.label Memory Balloon Target (None)
+perfCounter.PerfCounterInfo141.nameInfo.summary Amount of memory that can be used by memory control
+perfCounter.PerfCounterInfo141.nameInfo.key vmmemctltarget
+perfCounter.PerfCounterInfo141.groupInfo.label Memory
+perfCounter.PerfCounterInfo141.groupInfo.summary Memory
+perfCounter.PerfCounterInfo141.groupInfo.key mem
+perfCounter.PerfCounterInfo141.unitInfo.label KB
+perfCounter.PerfCounterInfo141.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo141.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo141.rollupType none
+perfCounter.PerfCounterInfo141.statsType absolute
+perfCounter.PerfCounterInfo141.associatedCounterId1 65607
+perfCounter.PerfCounterInfo141.associatedCounterId2 65609
+perfCounter.PerfCounterInfo141.associatedCounterId3 65608
+perfCounter.PerfCounterInfo142.key 65607
+perfCounter.PerfCounterInfo142.nameInfo.label Memory Balloon Target (Average)
+perfCounter.PerfCounterInfo142.nameInfo.summary Amount of memory that can be used by memory control
+perfCounter.PerfCounterInfo142.nameInfo.key vmmemctltarget
+perfCounter.PerfCounterInfo142.groupInfo.label Memory
+perfCounter.PerfCounterInfo142.groupInfo.summary Memory
+perfCounter.PerfCounterInfo142.groupInfo.key mem
+perfCounter.PerfCounterInfo142.unitInfo.label KB
+perfCounter.PerfCounterInfo142.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo142.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo142.rollupType average
+perfCounter.PerfCounterInfo142.statsType absolute
+perfCounter.PerfCounterInfo143.key 65608
+perfCounter.PerfCounterInfo143.nameInfo.label Memory Balloon Target (Maximum)
+perfCounter.PerfCounterInfo143.nameInfo.summary Amount of memory that can be used by memory control
+perfCounter.PerfCounterInfo143.nameInfo.key vmmemctltarget
+perfCounter.PerfCounterInfo143.groupInfo.label Memory
+perfCounter.PerfCounterInfo143.groupInfo.summary Memory
+perfCounter.PerfCounterInfo143.groupInfo.key mem
+perfCounter.PerfCounterInfo143.unitInfo.label KB
+perfCounter.PerfCounterInfo143.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo143.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo143.rollupType maximum
+perfCounter.PerfCounterInfo143.statsType absolute
+perfCounter.PerfCounterInfo144.key 65609
+perfCounter.PerfCounterInfo144.nameInfo.label Memory Balloon Target (Minimum)
+perfCounter.PerfCounterInfo144.nameInfo.summary Amount of memory that can be used by memory control
+perfCounter.PerfCounterInfo144.nameInfo.key vmmemctltarget
+perfCounter.PerfCounterInfo144.groupInfo.label Memory
+perfCounter.PerfCounterInfo144.groupInfo.summary Memory
+perfCounter.PerfCounterInfo144.groupInfo.key mem
+perfCounter.PerfCounterInfo144.unitInfo.label KB
+perfCounter.PerfCounterInfo144.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo144.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo144.rollupType minimum
+perfCounter.PerfCounterInfo144.statsType absolute
+perfCounter.PerfCounterInfo145.key 65610
+perfCounter.PerfCounterInfo145.nameInfo.label Memory Consumed (None)
+perfCounter.PerfCounterInfo145.nameInfo.summary Amount of host memory consumed by the virtual machine for guest memory
+perfCounter.PerfCounterInfo145.nameInfo.key consumed
+perfCounter.PerfCounterInfo145.groupInfo.label Memory
+perfCounter.PerfCounterInfo145.groupInfo.summary Memory
+perfCounter.PerfCounterInfo145.groupInfo.key mem
+perfCounter.PerfCounterInfo145.unitInfo.label KB
+perfCounter.PerfCounterInfo145.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo145.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo145.rollupType none
+perfCounter.PerfCounterInfo145.statsType absolute
+perfCounter.PerfCounterInfo145.associatedCounterId1 65611
+perfCounter.PerfCounterInfo145.associatedCounterId2 65613
+perfCounter.PerfCounterInfo145.associatedCounterId3 65612
+perfCounter.PerfCounterInfo146.key 65611
+perfCounter.PerfCounterInfo146.nameInfo.label Memory Consumed (Average)
+perfCounter.PerfCounterInfo146.nameInfo.summary Amount of host memory consumed by the virtual machine for guest memory
+perfCounter.PerfCounterInfo146.nameInfo.key consumed
+perfCounter.PerfCounterInfo146.groupInfo.label Memory
+perfCounter.PerfCounterInfo146.groupInfo.summary Memory
+perfCounter.PerfCounterInfo146.groupInfo.key mem
+perfCounter.PerfCounterInfo146.unitInfo.label KB
+perfCounter.PerfCounterInfo146.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo146.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo146.rollupType average
+perfCounter.PerfCounterInfo146.statsType absolute
+perfCounter.PerfCounterInfo147.key 65612
+perfCounter.PerfCounterInfo147.nameInfo.label Memory Consumed (Maximum)
+perfCounter.PerfCounterInfo147.nameInfo.summary Amount of host memory consumed by the virtual machine for guest memory
+perfCounter.PerfCounterInfo147.nameInfo.key consumed
+perfCounter.PerfCounterInfo147.groupInfo.label Memory
+perfCounter.PerfCounterInfo147.groupInfo.summary Memory
+perfCounter.PerfCounterInfo147.groupInfo.key mem
+perfCounter.PerfCounterInfo147.unitInfo.label KB
+perfCounter.PerfCounterInfo147.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo147.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo147.rollupType maximum
+perfCounter.PerfCounterInfo147.statsType absolute
+perfCounter.PerfCounterInfo148.key 65613
+perfCounter.PerfCounterInfo148.nameInfo.label Memory Consumed (Minimum)
+perfCounter.PerfCounterInfo148.nameInfo.summary Amount of host memory consumed by the virtual machine for guest memory
+perfCounter.PerfCounterInfo148.nameInfo.key consumed
+perfCounter.PerfCounterInfo148.groupInfo.label Memory
+perfCounter.PerfCounterInfo148.groupInfo.summary Memory
+perfCounter.PerfCounterInfo148.groupInfo.key mem
+perfCounter.PerfCounterInfo148.unitInfo.label KB
+perfCounter.PerfCounterInfo148.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo148.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo148.rollupType minimum
+perfCounter.PerfCounterInfo148.statsType absolute
+perfCounter.PerfCounterInfo149.key 65614
+perfCounter.PerfCounterInfo149.nameInfo.label Memory Used by vmkernel
+perfCounter.PerfCounterInfo149.nameInfo.summary Amount of memory used by the vmkernel
+perfCounter.PerfCounterInfo149.nameInfo.key sysUsage
+perfCounter.PerfCounterInfo149.groupInfo.label Memory
+perfCounter.PerfCounterInfo149.groupInfo.summary Memory
+perfCounter.PerfCounterInfo149.groupInfo.key mem
+perfCounter.PerfCounterInfo149.unitInfo.label KB
+perfCounter.PerfCounterInfo149.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo149.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo149.rollupType none
+perfCounter.PerfCounterInfo149.statsType absolute
+perfCounter.PerfCounterInfo149.associatedCounterId1 65615
+perfCounter.PerfCounterInfo149.associatedCounterId2 65617
+perfCounter.PerfCounterInfo149.associatedCounterId3 65616
+perfCounter.PerfCounterInfo150.key 65615
+perfCounter.PerfCounterInfo150.nameInfo.label Memory Used by vmkernel
+perfCounter.PerfCounterInfo150.nameInfo.summary Amount of memory used by the vmkernel
+perfCounter.PerfCounterInfo150.nameInfo.key sysUsage
+perfCounter.PerfCounterInfo150.groupInfo.label Memory
+perfCounter.PerfCounterInfo150.groupInfo.summary Memory
+perfCounter.PerfCounterInfo150.groupInfo.key mem
+perfCounter.PerfCounterInfo150.unitInfo.label KB
+perfCounter.PerfCounterInfo150.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo150.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo150.rollupType average
+perfCounter.PerfCounterInfo150.statsType absolute
+perfCounter.PerfCounterInfo151.key 65616
+perfCounter.PerfCounterInfo151.nameInfo.label Memory Used by vmkernel
+perfCounter.PerfCounterInfo151.nameInfo.summary Amount of memory used by the vmkernel
+perfCounter.PerfCounterInfo151.nameInfo.key sysUsage
+perfCounter.PerfCounterInfo151.groupInfo.label Memory
+perfCounter.PerfCounterInfo151.groupInfo.summary Memory
+perfCounter.PerfCounterInfo151.groupInfo.key mem
+perfCounter.PerfCounterInfo151.unitInfo.label KB
+perfCounter.PerfCounterInfo151.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo151.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo151.rollupType maximum
+perfCounter.PerfCounterInfo151.statsType absolute
+perfCounter.PerfCounterInfo152.key 65617
+perfCounter.PerfCounterInfo152.nameInfo.label Memory Used by vmkernel
+perfCounter.PerfCounterInfo152.nameInfo.summary Amount of memory used by the vmkernel
+perfCounter.PerfCounterInfo152.nameInfo.key sysUsage
+perfCounter.PerfCounterInfo152.groupInfo.label Memory
+perfCounter.PerfCounterInfo152.groupInfo.summary Memory
+perfCounter.PerfCounterInfo152.groupInfo.key mem
+perfCounter.PerfCounterInfo152.unitInfo.label KB
+perfCounter.PerfCounterInfo152.unitInfo.summary Kilobytes
+perfCounter.PerfCounterInfo152.unitInfo.key kiloBytes
+perfCounter.PerfCounterInfo152.rollupType minimum
+perfCounter.PerfCounterInfo152.statsType absolute
+vim_disconnect(79): calling Logout...
+vim_disconnect(83): calling soap_end...

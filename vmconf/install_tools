@@ -1,0 +1,59 @@
+#!/bin/bash
+
+testing=0
+
+TOOLSDIR=/usr/local/lib/tools
+DESTDIR=/var/tmp
+
+SCRIPT=do_tools
+
+REMOVE_TIMEOUT=120
+COPY_TIMEOUT=300
+INSTALL_TIMEOUT=600
+
+VM=$1
+if test -z "$VM"; then
+	echo "usage: install_tools <VM name>"
+	exit 1
+fi
+
+# Get correct RPM
+host=`/usr/local/bin/vminfo -n $VM | /bin/awk '{ print $2 }'`
+if test "$host" = "vm"; then
+        echo "VM: $VM not found"
+	exit 1
+fi
+info=`/usr/local/bin/hostinfo -n $host`
+ver=`echo $info | awk '{ print $3 }'`
+build=`echo $info | awk '{ print $4 }'`
+if test -f $TOOLSDIR/VMwareTools-$ver-$build.i386.rpm; then
+	file=VMwareTools-$ver-$build.i386.rpm
+else
+	file=VMwareTools-$ver-$build.tar.gz
+fi
+echo "file: $file"
+
+do_copy() {
+	echo "copying..."
+	if test ! -f $TOOLSDIR/$file; then
+		echo "tools not found: $TOOLSDIR/$file"
+		exit 1
+	fi
+	/usr/local/bin/timeout $REMOVE_TIMEOUT $TOOLSDIR/admssh $VM "sudo rm -f $DESTDIR/$file $DESTDIR/$SCRIPT" > /dev/null 2>&1
+	test $? -ne 0 && exit 1
+	/usr/local/bin/timeout $COPY_TIMEOUT $TOOLSDIR/admscp $TOOLSDIR/$file $TOOLSDIR/$SCRIPT $VM:$DESTDIR
+	test $? -ne 0 && exit 1
+}
+do_inst() {
+	echo "installing..."
+	/usr/local/bin/timeout $INSTALL_TIMEOUT $TOOLSDIR/admssh $VM "sudo su - root -c \"chmod +x $DESTDIR/$SCRIPT; sh $DESTDIR/$SCRIPT $file $DESTDIR; rm -f $DESTDIR/$SCRIPT\""
+	if test $? -ne 0; then
+		echo "install failed!"
+		exit 1
+	fi
+}
+
+do_copy
+do_inst
+
+exit 0

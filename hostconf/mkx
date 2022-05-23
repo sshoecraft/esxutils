@@ -1,0 +1,4 @@
+#esxconf -x -s prod-cx1-vm05.uson.usoncology.int config.network config.virtualNicManagerInfo > x
+#/usr/local/bin/esxconf -x -s dev-vm4-app08 config.network config.virtualNicManagerInfo > x
+#/usr/local/bin/esxconf -x -s prod-vm-app04 config.network config.virtualNicManagerInfo > x
+/usr/local/bin/esxconf -x -s usodpvpesx01 config.network config.virtualNicManagerInfo > x

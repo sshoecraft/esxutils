@@ -1,0 +1,11 @@
+#!/bin/bash
+tmp=/tmp/hostwwn1.dat
+esxconf -s $1 config.storageDevice.hostBusAdapter | grep portWorldWideName | awk '{ print $2 }' > $tmp
+wwn=""
+while read num
+do
+	wwn="$wwn $(printf ' %llx' $num)"
+done < $tmp
+rm -f $tmp
+test -z "$wwn" && wwn=$(pulldb --wwn ^$1 | sed "s+:++g" | awk '{ print $2" "$3" "$4" "$5 }')
+echo $1 $wwn

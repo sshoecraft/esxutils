@@ -1,0 +1,31 @@
+#!/bin/bash
+#
+if test "$1" = "-n"; then no_head=1; shift; else no_head=0; fi
+if test "$1" = "-x"; then no_head=1; x_opt=1; shift; else x_opt=0; fi
+#
+tmp1=/tmp/fcvm1.$$
+tmp2=/tmp/fcvm2.$$
+#
+if test -z "$1"; then
+	echo "usage: fcvm <esx farm>"
+	exit 1
+fi
+farminfo -c -n "$1" > $tmp1 2>&1 
+if test $? -ne 0; then
+	echo "farm not found"
+	rm -f $tmp1 $tmp2
+	exit 1
+fi
+if test $no_head -eq 0; then
+format="%-16.16s %-25.25s %-25.25s %-18.18s %-14.14s %-12.12s\n";
+printf "$format" "Farm" "Host" "VM" "SLA" "Status" "Environ"
+printf "$format" "-----------------------------" "------------------------------" "------------------------------" "------------------" "-------------------" "--------------"
+fi
+if test $x_opt -eq 0; then cvm_opt="-n"; else cvm_opt="-x"; fi
+IFS=","
+while read cn hn rest
+do
+#	echo $hn
+	cvm $cvm_opt $hn
+done < $tmp1
+rm -f $tmp1 $tmp2

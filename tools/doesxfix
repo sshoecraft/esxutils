@@ -1,0 +1,57 @@
+#!/bin/bash
+wait_hostd() {
+        let c=0
+        HOSTD_TIMEOUT=300
+        while test $c -lt $HOSTD_TIMEOUT
+        do
+                echo "Waiting for hostd to become ready..."
+                if test -f /var/log/vmware/hostd.log; then
+                        if test `cat /var/log/vmware/hostd.log | grep -c "BEGIN SERVICES"` -gt 0; then
+                                break;
+                        fi
+                fi
+		sleep 10
+                let c=$c+10
+        done
+        if test $c -eq $HOSTD_TIMEOUT; then
+                echo "Timeout waiting for hostd to become ready!"
+                return 1
+        fi
+        return 0
+}
+
+wait_https() {
+        let c=0
+        HTTPS_TIMEOUT=300
+        while test $c -lt $HTTPS_TIMEOUT
+        do
+                echo "Waiting for HTTPs to become ready..."
+                /usr/bin/vim-cmd vimsvc/auth/lockdown_is_enabled > /dev/null 2>&1
+                test $? -eq 0 && break
+                sleep 10
+                let c=$c+10
+        done
+        if test $c -eq $HTTPS_TIMEOUT; then
+                echo "Timeout waiting for HTTPs to become ready!"
+                return 1
+        fi
+        return 0
+}
+# VPXA
+/sbin/service vmware-vpxa stop;
+/usr/bin/killall vpxa
+/bin/rm -f /var/run/vmware/watchdog-vpxa.PID
+# Authd
+/sbin/service vmware-vmkauthd stop;
+# Hostd
+/sbin/service mgmt-vmware stop
+/usr/bin/killall vmware-watchdog vmware-hostd
+/bin/rm -f /var/run/vmware/vmware-hostd.PID
+/bin/rm -f /var/run/vmware/watchdog-hostd.PID
+#
+# Start
+/sbin/service vmware-vpxa start; /sbin/service vmware-vmkauthd start; /etc/init.d/mgmt-vmware start < /dev/null
+#echo "Waiting for hostd..."
+#wait_hostd
+#wait_https
+/bin/rm -f /tmp/doesxfix

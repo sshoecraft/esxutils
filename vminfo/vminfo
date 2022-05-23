@@ -1,0 +1,331 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use DBI;
+use Getopt::Long;
+use Pod::Usage;
+
+my $debug = 0;
+sub dprintf { my $level = shift; printf(@_) if ($debug >= $level); }
+
+my $VMDB_SERVER = "tools.uprd.usoncology.unx";
+my $SYSDB_SERVER = "tools.uprd.usoncology.unx";
+
+#my $vmdb = DBI->connect("DBI:mysql:esxadmin:$VMDB_SERVER",'esxadmin_ro') or die "Couldn't connect to vmdb: " . DBI->errstr;
+my $vmdb = DBI->connect("DBI:mysql:esxadmin",'esxadmin_ro') or die "Couldn't connect to vmdb: " . DBI->errstr;
+#my $sysdb = DBI->connect("DBI:mysql:sysdb:$SYSDB_SERVER",'sysdb_ro') or die "Couldn't connect to sysdb: " . DBI->errstr;
+my $sysdb = DBI->connect("DBI:mysql:sysdb",'sysdb_ro') or die "Couldn't connect to sysdb: " . DBI->errstr;
+
+#my $last_check = "(UNIX_TIMESTAMP() - UNIX_TIMESTAMP(`last_seen`) < 172800)";
+my $last_check = '(1 = 1)';
+my $vms_fields = "id,farm_id,host_id,name,ci_name,tools,state,cpu_total,cpu_usage,mem_total,mem_usage";
+my $all_vms = $vmdb->prepare("SELECT name FROM vms WHERE $last_check ORDER by name");
+my $vms = $vmdb->prepare("SELECT $vms_fields FROM vms WHERE name like ? AND $last_check");
+my $vms_exact = $vmdb->prepare("SELECT $vms_fields FROM vms WHERE name = ? AND $last_check");
+my $vms_alias = $vmdb->prepare("SELECT $vms_fields FROM vms WHERE annotation like ?");
+my $vms_alias_exact = $vmdb->prepare("SELECT $vms_fields FROM vms WHERE annotation = ?");
+my $vms_ci = $vmdb->prepare("SELECT $vms_fields FROM vms WHERE ci_name like ? AND $last_check");
+my $vm_file = $vmdb->prepare("SELECT name,type,size FROM vm_files WHERE vm_id = ?");
+my $vm_file_size = $vmdb->prepare("SELECT ROUND(SUM(size)/1048576,0) FROM vm_files WHERE vm_id = ?");
+my $vm_disk = $vmdb->prepare("SELECT name,filename,ROUND(size/1048576) FROM vm_disks WHERE vm_id = ?");
+my $vm_disk_size = $vmdb->prepare("SELECT ROUND(SUM(size)/1048576,0) FROM vm_disks WHERE vm_id = ?");
+my $hosts = $vmdb->prepare("SELECT name FROM hosts WHERE id = ?");
+my $farms = $vmdb->prepare("SELECT name FROM farms WHERE id = ?");
+
+my $help = 0;
+my $no_head = 0;
+my $do_tools = 0;
+my $do_state = 0;
+my $do_mach = 0;
+my $do_usage = 0;
+my $x_opt = 0;
+my $c_opt = 0;
+my $e_opt = 0;
+my $do_list = 0;
+my $do_disk = 0;
+my $do_file = 0;
+my $alias;
+GetOptions('help|?' => \$help, 'list' => \$do_list, 'nohead' => \$no_head, 'xopt' => \$x_opt, 'disk' => \$do_disk, 'file' => \$do_file, 'state' => \$do_state, 'tools' => \$do_tools, 'comma' => \$c_opt, 'mach' => \$do_mach, 'usage' => \$do_usage, 'alias' => \$alias, 'exact' => \$e_opt) or pod2usage(2);
+#pod2usage(1) if $help or (@ARGV ne 1);
+pod2usage(1) if $help or (@ARGV < 1 and $do_list == 0);
+$no_head = 1 if ($x_opt);
+#printf("do_mach: %d, do_usage: %d\n", $do_mach, $do_usage);
+
+#if ($#ARGV < 0) {
+#	print "usage: vminfo <vm name>\n";
+#	exit 1;
+#}
+my $arg = $ARGV[0];
+
+my @fieldinfo = (
+        [ "Farm", "%-20.20s" ],
+        [ "Host", "%-35.35s" ],
+        [ "VM", "%-30.30s" ],
+        [ "CPU", "%-4.4s" ],
+        [ "Memory", "%-8.8s" ],
+	[ "Disk", "%-6.6s" ],
+        [ "Tools", "%-20.20s" ],
+	[ "Name", "%-11.11s" ],
+	[ "File", "%-70.70s" ],
+	[ "Size", "%8.8s" ],
+	[ "State", "%5.5s" ],
+	[ "Type", "%15.15s" ],
+);
+
+my @fields;
+if ($do_tools) {
+        @fields = ( "Farm", "Host", "VM", "Tools" );
+} elsif ($do_state) {
+        @fields = ( "Farm", "Host", "VM", "State" );
+} elsif ($do_mach) {
+        @fields = ( "Farm", "Host", "VM", "CPU", "Memory", "Disk" );
+} elsif ($do_usage) {
+        @fields = ( "Farm", "Host", "VM", "CPU", "Memory", "Disk" );
+} elsif ($do_disk) {
+        @fields = ( "VM", "Name", "File", "Size" );
+} elsif ($do_file) {
+        @fields = ( "VM", "File", "Type", "Size" );
+} else {
+        @fields = ( "Farm", "Host", "VM" );
+}
+
+my $format = "";
+my $header = "";
+my $hline = "";
+foreach my $field (@fields) {
+#	printf("field: %s\n", $field);
+	foreach my $info (@fieldinfo) {
+#		printf("name: %s, format: %s\n", $info->[0], $info->[1]);
+		if ($info->[0] eq "$field") {
+			if ($c_opt) {
+				$format = $format . "," if (length($format));
+				$format = $format . "%s";
+				$header = $header . "," if (length($header));
+				$header = $header . $info->[0];
+				$hline = $hline . "*bug*";
+			} else {
+				$format = $format . "  " if (length($format));
+				$format = $format . $info->[1];
+				$header = $header . sprintf($info->[1],$info->[0]) . "  ";
+				$hline = $hline . sprintf($info->[1],"--------------------------------------------------------------------------------------------------------------") . "  ";
+			}
+		}
+	}
+}
+$format = $format . "\n";
+dprintf(1,"format: %s", $format);
+dprintf(1,"header: %s\n", $header);
+dprintf(1,"hline: %s\n", $hline);
+
+sub do_vm {
+        my ($name) = @_;
+	dprintf(1,"vm: %s\n", $name);
+
+	my @data;
+	my $ref;
+
+	my $search_name = "%" . $name . "%";
+	if ($alias) {
+		if ($e_opt) {
+			$ref = $vms_alias_exact;
+			$search_name = $name;
+		} else {
+			$ref = $vms_alias;
+		}
+	} else {
+		if ($e_opt) {
+			$ref = $vms_exact;
+			$search_name = $name;
+		} else {
+			$ref = $vms;
+		}
+	}
+	$ref->execute($search_name);
+	dprintf(1,"name: %s, rows: %d\n", $search_name, $ref->rows);
+	if (!$ref->rows) {
+		# If not found and not searching by alias or exact
+		unless($alias || $e_opt) {
+			$vms_ci->execute($search_name);
+			dprintf(1,"ci name: %s, rows: %d\n", $search_name, $vms_ci->rows);
+			if (!$vms_ci->rows) {
+				printf("vminfo: vm '%s' not found.\n",$name);
+				return 1;
+			} else {
+				$ref = $vms_ci;
+			}
+		} else {
+			if ($alias) {
+				printf("vminfo: vm wth alias '%s' not found.\n",$name);
+				return 1;
+			} elsif ($e_opt) {
+				printf("vminfo: vm '%s' not found.\n",$name);
+				return 1;
+			}
+		}
+	}
+
+	while(@data = $ref->fetchrow_array()) {
+		my ($vm_id,$farm_id,$host_id,$name,$ci_name,$tools,$state,$cpu,$ucpu,$mem,$umem) = @data;
+		$tools = "unknown" unless($tools);
+		dprintf(1,"vm_id: %d, host_id: %d, name: %s, ci_name: %s, tools: %s, state: %s, cpu: %d, ucpu: %d, mem: %d, umem: %d\n", $vm_id, $host_id, $name, $ci_name, $tools, $state, $cpu, $mem, $ucpu, $umem);
+
+		my ($farm,$host);
+
+#		printf("farm_id: %d\n", $farm_id);
+		$farms->execute($farm_id);
+		($farm) = $farms->fetchrow_array();
+		$farm = "unknown" unless($farm);
+
+#		printf("host_id: %d\n", $host_id);
+		$hosts->execute($host_id);
+		($host) = $hosts->fetchrow_array();
+		$host = "unknown" unless($host);
+
+		if ($do_tools) {
+			if ($x_opt) {
+				printf("%s\n", $tools);
+			} else {
+				printf($format,$farm,$host,$name,$tools);
+			}
+		} elsif ($do_state) {
+			$state =~ s/powered//;
+			if ($x_opt) {
+				printf("%s\n", $state);
+			} else {
+				printf($format,$farm,$host,$name,$state);
+			}
+		} elsif ($do_disk) {
+			$vm_disk->execute($vm_id);
+			while(my @data = $vm_disk->fetchrow_array()) {
+				my ($dname,$dfile,$dsize) = @data;
+				if ($x_opt) {
+					printf("%s,%s,%d\n",$name,$dname,$dfile,$dsize);
+				} else {
+					printf($format,$name,$dname,$dfile,$dsize);
+				}
+			}
+		} elsif ($do_file) {
+			$vm_file->execute($vm_id);
+			while(my @data = $vm_file->fetchrow_array()) {
+				my ($dname,$dtype,$dsize) = @data;
+				if ($x_opt) {
+					printf("%s,%s,%s,%d\n",$name,$dname,$dtype,$dsize);
+				} else {
+					printf($format,$name,$dname,$dtype,$dsize);
+				}
+			}
+		} elsif ($do_mach) {
+			my $disk = 0;
+			$vm_disk_size->execute($vm_id);
+			if ($vm_disk_size->rows) {
+				my @disk_data = $vm_disk_size->fetchrow_array();
+				$disk = $disk_data[0];
+			}
+			if ($x_opt) {
+				printf("%d,%d,%d\n", $cpu, $mem, $disk);
+			} else {
+				printf($format,$farm,$host,$name,$cpu,$mem,$disk);
+			}
+		} elsif ($do_usage) {
+			my $disk = 0;
+			$vm_disk_size->execute($vm_id);
+			if ($vm_disk_size->rows) {
+				my @disk_data = $vm_disk_size->fetchrow_array();
+				$disk = $disk_data[0];
+			}
+			if ($x_opt) {
+				printf("%d,%d,%d\n", $ucpu, $umem, $disk);
+			} else {
+				printf($format,$farm,$host,$name,$ucpu,$umem,$disk);
+			}
+		} else {
+			if ($x_opt) {
+				printf("%s\n", (length($ci_name) ? $ci_name : $name));
+			} else {
+				printf($format,$farm,$host,$name);
+			}
+		}
+	}
+}
+
+if ($no_head == 0 && $do_list == 0 && $c_opt == 0) {
+	printf("%s\n", $header);
+	printf("%s\n", $hline);
+}
+
+if ($do_list) {
+	$all_vms->execute() or die;
+	while(my @data = $all_vms->fetchrow_array()) {
+		my ($name) = @data;
+		printf("%s\n",$name);
+	}
+} else {
+	if (substr($arg,0,1) eq "@") {
+	        my $file=substr($arg,1,99);
+		open(INPUT, $file) or die("couldnt open " . $file);
+		while (<INPUT>) {
+			chomp($_);
+			do_vm $_;
+		}
+		close(INPUT);
+	} else {
+		do_vm $arg;
+	}
+}
+
+exit 0;
+
+ __END__
+ 
+=head1 NAME
+
+sample - Using GetOpt::Long and Pod::Usage
+
+=head1 SYNOPSIS
+
+vminfo [options] <VM Name>
+
+Options:
+	-help		Brief help message
+	-nohead		Don't print header
+	-comma		Display comma delimited output
+	-tools          Display status of VMware tools
+	-state          Display power state
+	-mach		Display CPU and Memory values
+	-x 		Only print values
+
+=head1 OPTIONS 
+
+=over 8
+
+=item <-help>
+
+Print a brief help message and exits.
+
+=item B<-nohead>
+
+No header
+
+=item B<-xopt>
+
+No summary
+
+=item B<-tools>
+
+Check tools status
+
+=item B<-comma>
+
+Display in comma delimited output
+
+=item B<-match>
+
+Exact Match
+
+=back
+
+=head1 DESCRIPTION
+
+B<This program> will read the given input file(s) and do something useful with the contents thereof.  
+
+=cut

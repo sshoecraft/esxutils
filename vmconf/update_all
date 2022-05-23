@@ -1,0 +1,22 @@
+#!/bin/bash
+#
+tmp=/tmp/vmconf_$$.tmp
+dat=/tmp/vmconf_$$.dat
+#
+cd ~/src/vmconf
+sh mklist | sort > $tmp
+rm -f $dat
+while read n
+do
+	if test `cat ~/etc/vmconf_exceptions | grep -c "$n"` -gt 0; then
+		echo "Skipping: $n"
+	else
+		echo $n >> $dat
+	fi
+done < $tmp
+rm -f $tmp
+#
+rm -rf /tmp/tools
+mkdir -p /tmp/tools
+/usr/local/bin/worker $dat 512 ./doit
+rm -f $dat

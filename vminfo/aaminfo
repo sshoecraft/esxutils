@@ -1,0 +1,19 @@
+#!/bin/bash
+if test -z "$1"; then
+	echo "usage: aaminfo <host>"
+	exit 1
+fi
+host=$1
+strip_domain() {
+        echo $1 | awk '{
+                i=index($0,".");
+                if (i > 1)
+                        print substr($0,1,i-1)
+                else
+                        print $0;
+                endif
+        }'
+}
+shost=`strip_domain $host`
+#echo $shost
+/usr/local/lib/tools/admssh $host "sudo su - root -c \"FT_DIR=/opt/vmware/aam /opt/vmware/aam/bin/ftcli -domain vmware -connect $shost -port 8042 -timeout 60 -cmd listnodes\""

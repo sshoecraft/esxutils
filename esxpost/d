@@ -1,0 +1,6 @@
+make || exit 1
+gdb ./esxpost << EOF
+set args d9t0002h
+run
+bt
+EOF

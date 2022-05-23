@@ -1,0 +1,2 @@
+#cat ~/logs/esxperf.log | grep logging | awk '{ print $4 }' | grep '^[d|g][0-9]t' | worker - 64 ~/bin/inst_sitescope
+cat ~/logs/esxperf.log | grep logging

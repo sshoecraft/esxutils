@@ -1,0 +1,55 @@
+        if (0) {
+            if ($@) {
+                if (ref($@) eq 'SoapFault') {
+                        if (ref($@->detail) eq 'InvalidPowerState') {
+                                Util::trace(0,"The attempted operation cannot be performed in the " ."current state (Powered On).\n\n");
+                        } elsif (ref($@->detail) eq 'SnapshotCopyNotSupported') {
+                                Util::trace(0,"Migration of virtual machines with snapshots is not " ."supported between the source and destination.\n\n");
+                        } elsif (ref($@->detail) eq 'NotSupported') {
+                                Util::trace(0,"The operation is not supported on the Virtual Machine.\n\n");
+                        } elsif (ref($@->detail) eq 'InvalidState') {
+                                Util::trace(0,"Operation cannot be performed because of the " ."virtual machine's current state.\n\n");
+                        } elsif (ref($@->detail) eq 'VmConfigFault') {
+                                Util::trace(0,"virtual machine is not compatible with the " . " destination host.\n\n");
+                        } elsif (ref($@->detail) eq 'InvalidArgument') {
+                                Util::trace(0,"target host and target pool are not associated with " . "the same compute resource .\n\n");
+                        } else {
+                                Util::trace(0, "Fault " . $@);
+                        }
+                } else {
+                        Util::trace(0, "Fault " . $@);
+                }
+            }
+        }
+
+if (0) {
+      if ($@) {
+        if (ref($@) eq 'SoapFault') {
+           if(ref($@->detail) eq 'InvalidName') {
+              Util::trace(0,"Snapshot name is invalid");
+           }
+           elsif(ref($@->detail) eq 'InvalidState') {
+              Util::trace(0,"\nOperation cannot be performed in the current state
+                             of the virtual machine");
+           }
+           elsif(ref($@->detail) eq 'NotSupported') {
+              Util::trace(0,"\nHost product does not support snapshots.");
+           }
+           elsif(ref($@->detail) eq 'InvalidPowerState') {
+              Util::trace(0,"\nOperation cannot be performed in the current power state
+                            of the virtual machine.");
+           }
+           elsif(ref($@->detail) eq 'InsufficientResourcesFault') {
+              Util::trace(0,"\nOperation would violate a resource usage policy.");
+           }
+           elsif(ref($@->detail) eq 'HostNotConnected') {
+              Util::trace(0,"\nHost not connected.");
+           }
+           elsif(ref($@->detail) eq 'NotFound') {
+              Util::trace(0,"\nVirtual machine does not have a current snapshot");
+           }
+           else {
+              Util::trace(0, "\nFault: " . $@ . "\n\n");
+           }
+        }
+

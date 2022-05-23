@@ -1,0 +1,139 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Data::Dumper;
+use VMware::VIRuntime;
+use Term::ANSIColor;
+
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+use lib qw (/home/esxadmin/src/perl /usr/local/lib/perl);
+use utils;
+use vmdb;
+
+$debug = 3;
+
+#Opts::parse();
+#Opts::validate();
+#Util::connect();
+
+my $name = $ARGV[0];
+$name = "usonplpvm008";
+exit 0 unless($name);
+#printf("name: %s\n", $name);
+my ($dnsname,$aliases,$addrtype,$length,@addrs) = gethostbyname($name);
+unless($dnsname) {
+	printf("error: unable to resolve: %s\n", $name);
+	exit(1);
+} else {
+	$name = $dnsname;
+}
+#printf("dnsname: %s\n", $dnsname);
+
+my ($host_id) = vmdb::hosts_select_id(0,$name);
+my ($host) = vmdb::hosts_select($host_id);
+#print Dumper($host);
+my ($farm) = vmdb::farms_select($host->{farm_id});
+print Dumper($farm);
+#exit(0);
+
+my $pass = `/usr/local/bin/vim_cred -g -x -s $name -u 'root'`;
+chomp($pass);
+#printf("pass: %s\n", $pass);
+
+$ENV{'VI_PROTOCOL'} = 'https';
+$ENV{'VI_SERVER'} = $name;
+#$ENV{'VI_SERVER'} = $farm->{server};
+$ENV{'VI_SERVICEPATH'} = '/sdk';
+$ENV{'VI_USERNAME'} = 'root';
+$ENV{'VI_PASSWORD'} = $pass;
+Opts::parse();
+#Opts::validate();
+Util::connect();
+
+my $dvs = Vim::find_entity_views( view_type => 'DistributedVirtualSwitch' );
+foreach my $dv (sort{$a->name cmp $b->name} @$dvs) {
+#	print Dumper($dvs);
+	printf("DV: %s\n", $dv->{name});
+	#print Dumper($dv->portgroup);
+		if($dv->summary->hostMember) {
+			my $hostMembers = $dv->summary->hostMember;
+			print "Host(s): " . color("cyan") . scalar(@$hostMembers) . "\n" . color("reset");
+		}
+		if($dv->summary->vm) {
+			my $vms = $dv->summary->vm;
+			print Dumper($vms);
+			print "VirtualMacine(s): " . color("cyan") . scalar(@$vms) . "\n" . color("reset");
+		}
+		if($dv->summary->portgroupName) {
+                        my $portgroupNames = $dv->summary->portgroupName;
+			print Dumper($portgroupNames);
+                        print "dvPortgroup(s): " . color("cyan") . scalar(@$portgroupNames) . "\n" . color("reset");
+                }
+		print "\n";
+#	for my $pg (sort{$a->name cmp $b->name} @$dv->portgroup) {
+#		printf("PG: %s\n", $pg->{name});
+#	}
+}
+exit(0);
+
+my (@dvs) = Vim::find_entity_views( view_type => 'DistributedVirtualSwitch' );
+print Dumper(@dvs);
+for my $dvinfo (@dvs) {
+	for my $dv (@$dvinfo) {
+		printf("DV: %s\n", $dv->{name});
+	}
+}
+exit(0);
+
+my $xhost = Vim::find_entity_view(view_type => 'HostSystem', filter => { 'name' => $name});
+#print Dumper($xhost);
+
+my $x = Vim::get_view(mo_ref => $xhost->configManager->networkSystem);
+print Dumper($x);
+#                'networkInfo' => bless( {
+#                                         'vswitch' => [
+                                                        #bless( {
+                                                        #         'spec' => bless( {
+#                                         'portgroup' => [
+#                                                          bless( {
+#                                                                   'spec' => bless( {
+#                                                                                      'vswitchName' => 'vSwitch0',
+
+for my $pg (@{$x->{networkInfo}->{portgroup}}) {
+#	print Dumper($pginfo);
+	printf("name: %s, vlan: %s\n", $pg->{spec}->{name}, $pg->{spec}->{vlanId});
+#	last;
+}
+exit(0);
+
+
+#print Dumper($x->{networkInfo}->{vswitch});
+foreach my $vsinfo ($x->{networkInfo}->{vswitch}) {
+	for my $vswitch (@$vsinfo) {
+#		print Dumper($vswitch);
+		printf("vswitch: %s\n", $vswitch->{name});
+		for my $pg (@{$vswitch->{portgroup}}) {
+#			$pg = [ $pg ];
+			print Dumper($pg);
+#			printf("pg: %s\n", $pg->{name});
+		}
+	}
+}
+exit 0;
+
+my @host_networks = @{ Vim::get_views(mo_ref_array => $host->network) };
+#print Dumper(@host_networks);
+#my %networks = map { $_->name => $_ } @host_networks;
+#print Dumper(%networks);
+foreach my $net (@host_networks) {
+#	print Dumper($net);
+	printf("net: %s\n", $net->name);
+	my $info = Vim::get_view(mo_ref => $net->{mo_ref});
+	print Dumper($info);
+	last;
+}
+
+Util::disconnect();

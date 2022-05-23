@@ -1,0 +1,28 @@
+#!/usr/bin/perl
+use CGI;
+
+my $debug = 0;
+sub dprintf { my $level = shift; if ($debug >= $level) { print "#"; printf(@_) } }
+
+my $SERVER = "tools.uprd.usoncology.unx";
+
+my $q = new CGI;
+print $q->header();
+my $host = $q->param('host');
+$host = "invalid" unless($host);
+$host = $ARGV[0] if ($ARGV[0]);
+my $status = $q->param('status');
+$status = "Info" unless($status);
+$status = $ARGV[1] if ($ARGV[1]);
+my $msg  = $q->param('msg');
+$msg = "none" unless($msg);
+$msg = $ARGV[2] if ($ARGV[2]);
+$msg =~ s/ /%20/g;
+dprintf(1,"host: %s, msg: %s\n", $host, $msg);
+$host =~ tr/[a-zA-Z0-9\.//c;
+my $wg = "/usr/bin/curl -s -S -N \'http://$SERVER/cgi-bin/buildupd?host=$host&status=$status&msg=$msg\'";
+dprintf(1,"wg: %s\n", $wg);
+$| = 1;
+open(WG,"$wg |");
+while(<WG>) { print }
+close(WG); wait;

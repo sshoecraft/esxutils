@@ -1,0 +1,60 @@
+
+OPTS="--verbose"
+
+xml=/tmp/mkvm.xml
+
+get_name() {
+	t=`echo $name | awk '{ print substr($0,1,9) }'`
+	let i=0
+	while test $i -lt 9
+	do
+		echo $i
+		n=`printf "%s%03d" "$t" $i`
+		echo $n
+		let i=$i+1
+	done
+}
+
+get_vc() {
+	IFS=,
+	while read vc site clust dc
+	do
+		test `echo $vc | grep -c '^#'` -gt 0 && continue
+		test "$dc" != "$1" && continue
+	#	echo $vc $dc
+		n=`echo $vc | sed "s:\^::"`
+		nvc=`host $n | awk '{ print $1 }'`
+		echo $nvc
+	done < ~/etc/datacenters
+}
+
+IFS=,
+while read name hn dc id dsize msize cpu net rest
+do
+	test `echo $name | grep -c '^#'` -gt 0 && continue
+	vc=`get_vc "$dc"`
+	if test `esxconf -s $vw -t VirtualMachine name | awk '{ print $2 }'| grep -c -w "$name"` -gt 0; then
+		echo "VM: $name already exists, skipping"
+		continue
+	fi
+	host=`host $hn | awk '{ print $1 }'`
+	let disk=$dsize*1048576
+#	let disk_req=`echo $dsize ($msize * 1.5) + p | dc`
+	disk_req=`echo "$msize 1.5 * $dsize + 1024 * p" | dc | xargs printf "%.0f"`
+	if test -z "$disk_req"; then
+		echo "error: unable to calculate disk_req!"
+		exit 1
+	fi
+	let mem=$msize*1024
+	ds=`mysql -N -B -e "select name from datastores where name not like '%File%' and id in (select datastore_id from host_datastore where host_id in (select id from hosts where name = '$host')) and free > $disk_req order by free desc limit 1"`
+	if test -z "$ds"; then
+		echo "error: unable to get "$dsize"GB datastore on host: $host"
+		exit 1
+	fi
+	./mkxml "$name" "$host" "$dc" "$id" "$ds" "$disk" "$mem" "$cpu" "$net" > $xml
+	cat $xml
+#	continue
+	/usr/lib/vmware-vcli/apps/vm/vmcreate.pl $OPTS --url https://$vc:443/sdk/webService --username 'USON\svcvsphere' --password 'svcvsphere*!' --filename $xml --schema /usr/lib/vmware-vcli/apps/schema/vmcreate.xsd
+	break
+	do_collect -s $host -u root
+done < vminfo.dat

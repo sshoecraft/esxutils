@@ -1,0 +1,11 @@
+#!/bin/bash
+
+vm="$1"
+test -z "$vm" && exit 1
+host=`/usr/local/bin/vminfo -n -c $vm | awk -F, '{ print $2 }'`
+if test -z "$host"; then
+	echo "vm ($vm) not found!"
+	exit 1
+fi
+#./mount.pl --server $host --username root --password 'k1n0bi!' --vmname $vm
+./remcd.pl --server $host --username root --password 'k1n0bi!' --vmname $vm

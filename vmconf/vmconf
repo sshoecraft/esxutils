@@ -1,0 +1,36 @@
+#!/bin/bash
+
+uid=`id -u`
+if test $uid -eq 0; then
+        echo "do not run this as root!"
+        exit 1
+fi
+
+testing=1
+
+LIB=/usr/local/lib/tools
+test $testing -eq 1 && LIB=.
+
+if test -z "$1"; then
+	echo "usage: vmconf <VM>"
+	exit 1
+fi
+VM=$1
+echo "VM: $1"
+host=`/usr/local/bin/vminfo -n $VM | /bin/awk '{ print $2 }'`
+if test "$host" = "vm"; then
+	echo "$VM: not found"
+	exit 1
+fi
+
+CHECK_SCRIPT=$LIB/check_tools
+INSTALL_SCRIPT=$LIB/install_tools
+NTP_SCRIPT=$LIB/start_ntp
+
+#$CHECK_SCRIPT $VM
+#test $? -ne 0 && exit 0
+/usr/local/bin/timeout 300 /usr/local/lib/tools/admssh $VM "sudo bash -c \"chmod 1777 /tmp; chown root:root /tmp; killall yum; yum clean all; yum -y install make\"" 
+test $? -ne 0 && exit 1
+$INSTALL_SCRIPT $VM
+test $? -ne 0 && exit 1
+$NTP_SCRIPT $VM

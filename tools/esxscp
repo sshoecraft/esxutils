@@ -1,0 +1,48 @@
+#!/bin/bash
+pass=""
+#set -x
+while true
+do
+	case "$1" in
+	"-p")
+		shift
+		pass=$1
+		shift
+		;;
+	*)
+		break;;
+	esac
+done
+if test -z "$pass"; then
+	srv=$(echo "$*" | awk '{ print $NF }' | awk -F: '{ print $1 }')
+	if test -z "$srv"; then
+		echo "error: unable to determine destination server"
+		exit 1
+	fi
+	pass="$(/usr/local/bin/vim_cred -x -s "$srv" -u root)"
+	if test -z "$pass"; then
+		echo "error: unable to get password for server $srv"
+		exit 1
+	fi
+fi
+args="$*"
+test $(echo "$args" | grep -c :) -eq 0 && args="${args}:"
+OPTS="-o ConnectTimeout=5 -o StrictHostKeyChecking=no"
+expect << EOF
+spawn scp $OPTS -o User=root {*}$args
+sleep 1
+expect {
+        "(yes/no)? " {
+                send "yes\n"
+                sleep 1
+                exp_continue
+        }
+        "assword:" {
+                send "$pass\n"
+                expect {
+                        "~ # " { }
+                }
+        }
+}
+EOF
+status=$?

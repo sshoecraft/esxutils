@@ -1,0 +1,12 @@
+#!/bin/bash
+test -z "$1" && exit 1
+t=`/usr/local/bin/vminfo -c "$1"`
+if test `echo $t | grep -c found` -gt 0; then
+	echo $t
+	exit 1
+fi
+h=`echo $t | awk -F, '{ print $2 }'`
+t=`pulldb -cl $h`
+l=`echo $t | awk -F, '{ print $2 }'`
+test -z "$l" && l=unknown
+echo $l

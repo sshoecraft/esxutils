@@ -1,0 +1,12 @@
+while read a b c d
+do
+	if test "$a" = "enum"; then
+		t=$c
+	else
+		t=$b
+	fi
+	n=`echo $t | sed "s:\*::" | sed "s:;\$::" | sed "s:^ns1__::"`
+	test `echo $n | grep -c "^__size"` -gt 0 && continue
+#	echo $n
+	echo "<$n></$n>"
+done < vm.stru

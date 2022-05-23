@@ -1,0 +1,131 @@
+passwd -d root
+sed -i -e 's|root::|root:$1$LcwsKB7n$PtQn54jUyo90oxvOarvRT0:|' /etc/shadow
+log=/tmp/post.log
+way=`cat /etc/vmware/weasel/replay 2>/dev/null | grep ^waystation= | awk -F= '{ print $2 }'`
+test -z "$way" && way="10.5.194.111"
+echo "way: $way" > $log
+logit() {
+  echo "status: $1, message: $2" >> $log
+  html_msg=`echo "$2" | sed "s: :%20:g"`
+  str="http://$way/cgi-bin/buildupd?host=$(hostname -s)&status=$1&msg=$html_msg"
+  eval wget -q '$str' -O /dev/null >> $log
+}
+logit Info "Starting post"
+localcli storage vmfs extent list | sort -k 1 >/tmp/t 2>/dev/null
+getvol() {
+  while read line
+  do
+    last=`echo $line | awk '{ print $NF }'`
+    if test "$last" = "$1"; then
+      echo $line | awk '{ print $(NF-3) }'
+      break
+    fi
+  done < /tmp/t
+}
+uuid=`getvol 3`
+test -z "$uuid" && uuid=`getvol 1`
+if test -z "$uuid"; then
+  logit Fail "Unable to find save volume!"
+  exit 1
+fi
+volname=/vmfs/volumes/$uuid
+sn=`cat /etc/vmware/weasel/replay | grep ^system= | awk -F= '{ print $2 }' | awk -F. '{ print $1 }'`
+if test -n "$volname"; then
+  cp /etc/vmware/weasel/replay $volname/"$sn"-replay >> $log 2>&1
+  logit Info "Saved replay"
+else
+  logit Fail "Unable to save replay!"
+  exit 1
+fi
+logit Info "Post complete"
+exit 0
+#############################################################################################
+%firstboot --level 50
+default_waystation=10.5.194.111
+cat > /scratch/final << __END_FINAL
+hn=$(hostname)
+sn=$(hostname -s)
+way="$default_waystation"
+logit() {
+    html_msg=\`echo "\$2" | sed "s: :%20:g"\`
+    str="http://\$way/cgi-bin/buildupd?host=\$sn&status=\$1&msg=\$html_msg"
+    eval wget -q '\$str' -O /dev/null
+}
+localcli storage vmfs extent list | sort -k 1 >/tmp/t 2>/dev/null
+getvol() {
+  while read line
+  do
+    last=\`echo \$line | awk '{ print \$NF }'\`
+    if test "\$last" = "\$1"; then
+      echo \$line | awk '{ print \$(NF-3) }'
+      break
+    fi
+  done < /tmp/t
+}
+uuid=\`getvol 3\`
+test -z "\$uuid" && uuid=\`getvol 1\`
+if test -z "\$uuid"; then
+  logit Fail "Unable to find restore volume!"
+  exit 1
+fi
+volname=/vmfs/volumes/\$uuid
+scratch=\`cat /etc/vmware/locker.conf 2>/dev/null | awk '{ print \$1 }'\`
+if test -z "\$scratch"; then
+  scratch=/vmfs/volumes/\$uuid/.locker-\$sn
+  mkdir -p \$scratch
+  vim-cmd hostsvc/advopt/update ScratchConfig.ConfiguredScratchLocation string \$scratch
+fi
+if test -n "\$volname"; then
+  if test -f \$volname/\$sn-replay; then
+    replay=\$volname/\$sn-replay
+  else
+    replay=\`find /vmfs/volumes -name \$sn-replay\`
+    if test -z "\$replay"; then
+	    logit Fail "Unable to restore replay!"
+	    exit 1
+    fi
+  fi
+  if test "\$replay" != "\$scratch/\$sn-replay"; then
+    mv \$replay \$scratch/\$sn-replay
+  fi
+  way=\`cat \$scratch/\$sn-replay 2>/dev/null | grep ^waystation= | awk -F= '{ print \$2 }'\`
+  test -z "\$way" && way="$default_waystation"
+  logit Info "Restored replay"
+  wget -q -O \$scratch/getconf http://\$way/LinuxCOE/scripts/getconf
+  if test -f \$scratch/getconf; then
+    logit Info "Running getconf"
+    sh -x \$scratch/getconf > \$scratch/getconf.log 2>&1
+    if test -f /scratch/hostconf; then
+      mv /scratch/hostconf \$scratch/hostconf
+      rm -f \$scratch/hostconf.state \$scratch/hostconf.log
+      if test -f /etc/rc.local.d/local.sh; then
+	sed -i -e "s:^exit 0::" /etc/rc.local.d/local.sh
+        local=/etc/rc.local.d/local.sh
+      else
+        if test -f /etc/rc.d/rc.local; then
+          local=/etc/rc.d/rc.local
+        else
+          local=/etc/rc.local
+        fi
+        chmod 1755 \$local
+      fi
+      if test \`cat \$local | grep -c "^test -f "\` -eq 0; then
+         echo "test -f \$scratch/hostconf && nohup \$scratch/hostconf start >> \$scratch/hostconf.log 2>&1 &" >> \$local
+      fi
+    else
+      logit Fail "Unable to download hostconf!"
+      exit 1
+    fi
+  else
+    logit Fail "Unable to download getconf!"
+    exit 1
+  fi
+fi
+logit Info "Final complete"
+__END_FINAL
+sh -x /scratch/final > /scratch/final.log
+scratch=`cat /etc/vmware/locker.conf 2>/dev/null | awk '{ print $1 }'`
+if test -n "$scratch"; then
+  mv -f /scratch/final $scratch/final
+  mv -f /scratch/final.log $scratch/final.log
+fi

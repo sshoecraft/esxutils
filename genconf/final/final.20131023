@@ -1,0 +1,85 @@
+passwd -d root
+sed -i -e 's|root::|root:$1$LcwsKB7n$PtQn54jUyo90oxvOarvRT0:|' /etc/shadow
+log=/tmp/post.log
+way=`cat /etc/vmware/weasel/replay 2>/dev/null | grep ^waystation= | awk -F= '{ print $2 }'`
+test -z "$way" && way="10.5.194.111"
+echo "way: $way" > $log
+logit() {
+  echo "status: $1, message: $2" >> $log
+  html_msg=`echo "$2" | sed "s: :%20:g"`
+  str="http://$way/cgi-bin/nph-buildupd?host=$(hostname -s)&status=$1&msg=$html_msg"
+  eval wget -q '$str' -O /dev/null >> $log
+}
+logit Info "Starting post"
+localcli storage vmfs extent list >/tmp/t 2>/dev/null
+volname=""
+while read line
+do
+  c=`python -c "import sys; print len(sys.argv[1:])" $line`
+  last=`echo $line | awk "{ print \\$$c }"`
+  if test "$last" = "3"; then
+    uuid=`echo $line | awk "{ print \\$$((c-3)) }"`
+    volname="/vmfs/volumes/$uuid"
+    break
+  fi
+done < /tmp/t
+echo "volname: $volname" >> $log
+if test -n "$volname"; then
+  cp /etc/vmware/weasel/replay $volname/replay >> $log 2>&1
+  logit Info "Saved replay"
+else
+  logit Fail "Unable to save replay!"
+  exit 1
+fi
+logit Info "Post complete"
+exit 0
+%firstboot --level 50
+echo "echo \"\`date\` rc.local ran\" >> /tmp/stamp" >> /etc/rc.local
+cat > /scratch/final << EOF
+way="10.129.24.16"
+logit() {
+    html_msg=\`echo "\$2" | sed "s: :%20:g"\`
+    str="http://\$way/cgi-bin/nph-buildupd?host=$(hostname -s)&status=\$1&msg=\$html_msg"
+    eval wget -q '\$str' -O /dev/null
+}
+localcli storage vmfs extent list >/tmp/t 2>/dev/null
+volname=""
+while read line
+do
+  c=\`python -c "import sys; print len(sys.argv[1:])" \$line\`
+  last=\`echo \$line | awk "{ print \\\\\$\$c }"\`
+  if test "\$last" = "3"; then
+    uuid=\`echo \$line | awk "{ print \\\\\$\$((c-3)) }"\`
+    volname="/vmfs/volumes/\$uuid"
+    break
+  fi
+done < /tmp/t
+if test -n "\$volname"; then
+  if test -f \$volname/replay; then
+    cp \$volname/replay /scratch/replay
+  else
+    logit Fail "Unable to restore replay!"
+    exit 1
+  fi
+  way=\`cat /scratch/replay 2>/dev/null | grep ^waystation= | awk -F= '{ print \$2 }'\`
+  test -z "\$way" && way="10.129.24.16"
+  logit Info "Restored replay"
+  wget -q -O /scratch/getconf http://\$way/LinuxCOE/scripts/getconf
+  if test -f /scratch/getconf; then
+    logit Info "Running getconf"
+    sh -x /scratch/getconf > /scratch/getconf.log 2>&1
+    if test -f /scratch/hostconf; then
+      chmod 1755 /etc/rc.local
+      echo "test -f /scratch/hostconf && nohup /scratch/hostconf start > /dev/null 2>&1 &" >> /etc/rc.local
+    else
+      logit Fail "Unable to download hostconf!"
+      exit 1
+    fi
+  else
+    logit Fail "Unable to download getconf!"
+    exit 1
+  fi
+fi
+EOF
+sh -x /scratch/final > /scratch/final.log
+echo "`date` firstboot ran" >> /tmp/stamp

@@ -1,0 +1,23 @@
+#!/usr/bin/perl
+use CGI;
+
+my $SERVER = "tools.uprd.usoncology.unx";
+
+my $debug = 0;
+sub dprintf { my $level = shift; printf(@_) if ($debug >= $level); }
+
+my $q = new CGI;
+print $q->header();
+
+my $host = $q->param('host');
+$host = "invalid" unless($host);
+$host =~ tr/[a-zA-Z0-9\.//c;
+my $key = $q->param('key');
+$key = "" unless($key);
+my $url = "http://$SERVER/cgi-bin/esxpost?host=$host";
+$url .= "&key=$key" if (length($key));
+my $cmd = "/usr/bin/curl -s -S -N \'$url\'";
+dprintf(1,"cmd: %s\n", $cmd);
+open(WG,"$cmd |");
+while(<WG>) { print }
+close(WG); wait;

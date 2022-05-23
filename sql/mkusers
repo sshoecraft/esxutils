@@ -1,0 +1,33 @@
+#!/bin/bash
+RPASS=
+db=`cat ~/.my.cnf | grep ^database= | awk -F= '{ print $2 }'`
+user=`cat ~/.my.cnf | grep ^user= | awk -F= '{ print $2 }'`
+pass=`cat ~/.my.cnf | grep ^password= | awk -F= '{ print $2 }'`
+#MY="sudo mysql --database=mysql --user=root --password=$RPASS -e"
+MY="sudo mysql --database=mysql --user=root -e"
+doit() {
+	$MY "drop user '${1}'@'${2}'" > /dev/null 2>&1
+	if test -n "${4}"; then
+		$MY "create user '${1}'@'${2}' IDENTIFIED BY '$pass'"
+	else
+		$MY "create user '${1}'@'${2}'"
+	fi
+	$MY "grant ${3} on ${db}.* to '${1}'@'${2}'"
+}
+mkstd() {
+for w in '%' localhost $(hostname)
+do
+	doit "${db}_ro" "${w}" "select" ""
+	doit "${db}_rw" "${w}" "select,insert,update,delete" "${db}_rw"
+done
+}
+mkstd
+doit "$user" "localhost" "all" "$pass"
+#for w in % localhost
+#do
+#	$MY "grant select on ${db}.* to '${db}_ro'@'${w}'"
+#	mysql --database=mysql --user=root --password=$RPASS -e "grant select on $db.* to '$db"_"ro'@'$w'"
+#	mysql --database=mysql --user=root --password=$RPASS -e "grant select,insert,update,delete on $db.* to '$db"_"rw'@'$w'"
+#done
+#mysql --database=mysql --user=root --password=$RPASS -e "grant all on $db.* to '$user'@'localhost'"
+$MY "FLUSH PRIVILEGES"

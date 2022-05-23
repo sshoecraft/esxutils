@@ -1,0 +1,44 @@
+#!/bin/bash
+
+vc=usodpwpvc001.uson.usoncology.int
+tmp=/tmp/mkvm.dat
+log=/tmp/mkvm.log
+
+# parms: app, vcpu, mem in gig, hd in gig, annotation
+doit() {
+	app="$1"
+	c="$2"
+	g="$3"
+	h="$4"
+	i="$5"
+	a="$6"
+	fn=`curl -S -s -n "http://tools/namer/namer.php?action=get&site=usod&env=t&os=l&type=v&app=$app&reserve=yes"`
+	if test `echo $fn | grep -i -c error` -gt 0; then
+		echo $n
+		exit 1
+	fi
+	n=`echo $fn | awk -F. '{ print $1 }'`
+	m=`echo "$g 1024 * p" | dc`
+	t=`echo $h | sed "s:GB$::"`
+	s=`echo "$t 1024 * p" | dc`
+	if test "$i" = "rhel6_64Guest"; then
+		nic=vmxnet3
+	else
+		nic=e1000
+	fi
+	cat tmpl.xml | sed -e "s|+NAME+|$n|" -e "s:+VCPU+:$c:" -e "s:+MEM+:$m:" -e "s:+SIZE+:$s:" -e "s:+NIC+:$nic:" -e "s:+ID+:$i:" -e "s:+ANN+:$a:" > $tmp
+	./create_vms.pl --server $vc --username 'USON\svcvsphere' --password 'svcvsphere*!' --file $tmp > $log 2>&1
+	if test $? -ne 0; then
+		cat $log
+		exit 1
+	fi
+	echo "$a -> $fn"
+}
+#doit rx 4 8 16 "RX3000"
+#exit 0
+
+while read app c g h i a
+do
+	doit "$app" "$c" "$g" "$h" "$i" "$a"
+#	break
+done < xl

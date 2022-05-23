@@ -1,0 +1,179 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Data::Dumper;
+use VMware::VIRuntime;
+use Term::ANSIColor;
+
+use lib qw (/usr/local/lib/perl);
+use utils;
+
+$debug = 0;
+
+my $name = $ARGV[0];
+#$name = "ol7-64";
+exit 0 unless($name);
+dprintf(0,"VM name: %s\n", $name);
+
+my $dest = $ARGV[1];
+$dest = "DDC-SERVERS" unless($dest);
+dprintf(0,"Destination Cluster: %s\n", $dest);
+
+my $server = $ARGV[2];
+$server = 'usodplvvc001' unless($server);
+dprintf(3,"server: %s\n", $server);
+
+my ($dnsname,$aliases,$addrtype,$length,@addrs) = gethostbyname($server);
+unless($dnsname) {
+	printf("error: unable to resolve: %s\n", $server);
+	exit(1);
+} else {
+	$server = $dnsname;
+	dprintf(3,"NEW server: %s\n", $server);
+}
+dprintf(0,"VMware server: %s\n", $server);
+
+# Get user and pass
+my $user = `cat /usr/local/etc/.vim  | grep "^$server" | head -1 | awk '{ print \$2 }'`;
+chomp($user);
+$user = "" unless($user);
+if (!length($user)) {
+	printf("error: unable to find user for server, aborting\n");
+	exit(1);
+}
+my $pass = `/usr/local/bin/vim_cred -g -x -s '$server' -u '$user'`;
+chomp($pass);
+dprintf(3,"user: %s, pass: %s\n", $user, $pass);
+
+dprintf(0,"Connecting to server...\n");
+$ENV{'VI_PROTOCOL'} = 'https';
+$ENV{'VI_SERVER'} = $server;
+$ENV{'VI_SERVICEPATH'} = '/sdk';
+$ENV{'VI_USERNAME'} = $user;
+$ENV{'VI_PASSWORD'} = $pass;
+Opts::parse();
+#Opts::validate();
+dprintf(3,"Connecting...\n");
+Util::connect();
+
+# Get VM
+dprintf(0,"Gathering info...\n");
+my $vm = Vim::find_entity_view( view_type => 'VirtualMachine', filter => { 'name' => qr/$name/i });
+unless($vm) {
+	printf("error: unable to find vm in inventory!\n");
+	exit(1);
+}
+#print Dumper($vm);
+
+sub getStatus {
+        my ($taskRef,$message) = @_;
+
+        my $task_view = Vim::get_view(mo_ref => $taskRef);
+#        my $taskinfo = $task_view->info->state->val;
+        my $continue = 1;
+        while ($continue) {
+                my $info = $task_view->info;
+                if ($info->state->val eq 'success') {
+#                        print $message,"\n";
+                        return $info->result;
+                        $continue = 0;
+                } elsif ($info->state->val eq 'error') {
+                        my $soap_fault = SoapFault->new;
+                        $soap_fault->name($info->error->fault);
+                        $soap_fault->detail($info->error->fault);
+                        $soap_fault->fault_string($info->error->localizedMessage);
+                        die "$soap_fault\n";
+                }
+                sleep 2;
+                $task_view->ViewBase::update_view_data();
+        }
+}
+
+# 1. Shutdown guest & wait for it to power off.
+#print Dumper($vm);
+dprintf(1,"powerState: %s\n", $vm->runtime->powerState->val);
+#exit(0);
+if ($vm->runtime->powerState->val ne "poweredOff") {
+	dprintf(0,"Shutting down...\n");
+	# Shut it down
+	my $toolsStatus = $vm->summary->guest->toolsStatus->val;
+	dprintf(1,"toolsStatus: %s\n", $toolsStatus);
+	if ($toolsStatus eq "toolsOk" || $toolsStatus eq "toolsOld") {
+		eval { $vm->ShutdownGuest(); };
+		if ($@) {
+			if ($@ =~ /VMware Tools is not running/) {
+				printf("error: tools not running, unable to shutdown\n",$name); 
+			} else {
+				if (ref $@ eq "SoapFault" && defined $@->{fault_string}) {
+					Util::fail("ShutdownGuest: " . $@->{fault_string});
+				} else {
+					Util::fail("$@");
+				}
+			}
+			exit(1);
+		}
+	} else {
+		printf("error: tools not running, unable to shutdown\n",$name);
+		exit(1);
+	}
+	# Wait for it to power off
+	my $mor = $vm->{mo_ref};
+	my $retries = 180;
+	while($vm->runtime->powerState->val ne "poweredOff") {
+		if ($retries-- < 1) {
+			printf("%s: timeout waiting for vm to shutdown!\n");
+			exit(1);
+		}
+		sleep(5);
+		$vm = Vim::get_view( mo_ref => $mor );
+		dprintf(1,"powerState: %s\n", $vm->runtime->powerState->val);
+	}
+}
+
+# 4. Upgrade VM HW
+dprintf(0,"Upgrading VM hardware...\n");
+eval { $vm->UpgradeVM(); };
+
+# 5. Make cores = sockets
+dprintf(1,"numCPU: %s, numCoresPerSocket: %s\n", $vm->config->{hardware}->{numCPU}, $vm->config->{hardware}->{numCoresPerSocket});
+if ($vm->config->{hardware}->{numCoresPerSocket} != $vm->config->{hardware}->{numCPU}) {
+	dprintf(0,"Setting cores per socket ...\n\n");
+	my $spec = VirtualMachineConfigSpec->new(numCoresPerSocket => $vm->config->{hardware}->{numCPU});
+	eval {
+		my $task = $vm->ReconfigVM_Task(spec => $spec);
+		getStatus($task,$vm->{name} . ": CPU reconfig successful");
+	};
+}
+
+# Set mem to 16G
+if ($vm->config->{hardware}->{memoryMB} != 16384) {
+	dprintf(0,"Setting mem to 16G ...\n\n");
+	my $spec = VirtualMachineConfigSpec->new(memoryMB => 16384);
+	eval {
+		my $task = $vm->ReconfigVM_Task(spec => $spec);
+		getStatus($task,$vm->{name} . ": CPU reconfig successful");
+	};
+}
+
+# 6. Set tools upgrade policy
+dprintf(0,"Setting tools upgrade policy...\n");
+eval {
+	my $toolsConfig = ToolsConfigInfo->new(
+		afterPowerOn => 'true',
+		afterResume => 'true',
+		beforeGuestStandby => 'true',
+		beforeGuestShutdown => 'true',
+		toolsUpgradePolicy => 'upgradeAtPowerCycle',
+		syncTimeWithHost => 'false',
+	);
+	my $spec = VirtualMachineConfigSpec->new(tools => $toolsConfig);
+	my $task = $vm->ReconfigVM_Task(spec => $spec);
+	getStatus($task,$vm->{name} . ": Tools policy reconfig successful");
+};
+
+# 6. Power on
+dprintf(0,"Powering on...\n");
+eval { $vm->PowerOnVM(); };
+
+dprintf(0,"Done!\n");
+exit(0);

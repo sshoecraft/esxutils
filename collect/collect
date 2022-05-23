@@ -1,0 +1,132 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use DBI;
+use File::Basename;
+use Fcntl qw(:DEFAULT :flock);
+
+my $me = readlink $0; $me = $0 unless($me);
+#printf("me: %s\n", $me);
+sysopen(IN, $me, O_RDONLY) or die("$me: unable to open lock myself!");
+exit 0 if (flock(IN,LOCK_EX|LOCK_NB) == 0);
+
+my $debug = 0;
+my $use_threads = 1;
+if ($use_threads ne 0) {
+	use threads;
+}
+
+my $dir = dirname($0);
+my $home = $ENV{ HOME };
+my $timeout_cmd = "/usr/local/bin/timeout 180";
+
+#printf("dir: %s\n", $dir);
+my $logdir;
+if ($dir eq ".") {
+	$logdir = "./";
+} else {
+	$logdir = "$home/logs/";
+}
+
+#my $vcservers = "/usr/local/etc/vcservers";
+my $vcservers = "$home/etc/vcservers";
+my $surgient = "$home/etc/surgient";
+
+my $collector;
+if ($debug) {
+	$collector = "do_collect_debug";
+} else {
+	$collector = "do_collect";
+}
+
+sub msg {
+        my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+        printf("%02d/%02d/%4d %02d:%02d:%02d %s\n",$mon+1,$mday,$year+1900,$hour,$min,$sec,join(' ',@_));
+}
+
+sub do_collect {
+	my ($server,$user) = @_;
+	my $name;
+
+	my $i = index($server,".");
+#	printf("i: %d\n", $i);
+	if ($i > 0) {
+		$name = substr($server,0,$i);
+	} else {
+		$name = $server;
+	}
+	$name =~ s/^\^//;
+	printf("name: %s\n", $name);
+	$user = "" unless($user);
+#	printf("name: %s, user: %s\n", $name, $user);
+	my $cmd = sprintf("%s %s/%s -s %s", $timeout_cmd, $dir, $collector, $server);
+	$cmd = sprintf("%s -u \'%s\'", $cmd, $user) if (length($user));
+	$cmd = sprintf("%s -a %s%s_collect_actions.log", $cmd, $logdir, $name);
+	if ($use_threads) {
+		$cmd = $cmd . " > " . $logdir . $name . ".log" . " 2>&1";
+	}
+	printf("%s\n", $cmd);
+	system($cmd);
+}
+
+sub do_exec {
+	my $server = shift;
+	my $user = shift;
+	my $thr;
+
+	if ($use_threads) {
+		$thr = threads->create('do_collect', $server, $user);
+	} else {
+		do_collect($server, $user);
+	}
+}
+
+# If using threads, wait for all threads to exit
+sub wait_for_threads {
+	if ($use_threads) {
+		my $thr;
+
+		foreach $thr (threads->list) {
+			if ($thr->tid && !threads::equal($thr, threads->self)) {
+				$thr->join;
+			}
+		}
+	}
+}
+
+msg("starting");
+
+my %servers;
+
+# Process VC servers
+open(INPUT, $vcservers) or die("couldnt open " . $vcservers);
+while (<INPUT>) {
+	chomp($_);
+	my $c = substr($_,0,1);
+	next if ($c eq "#");
+	my ($version,$cluster,$host,$server,$user) = split(',',$_);
+#	printf("server: %s, user: %s\n", $server, $user);
+	$servers{$server} = $user;
+#	do_exec($server,$user);
+}
+close(INPUT);
+
+# Process hosts not in VC
+if (-f $surgient) {
+	open(INPUT, $surgient);
+	while (<INPUT>) {
+		chomp($_);
+		$servers{$_} = 0;
+#		do_exec($_, 0);
+	}
+	close(INPUT);
+}
+
+for (keys %servers) {
+#	print "server: $_, user: $servers{$_}\n";
+	do_exec($_,$servers{$_});
+}
+
+wait_for_threads;
+
+msg("finished");

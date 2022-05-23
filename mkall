@@ -1,0 +1,10 @@
+for OS in win linux; do
+	for BITS in 32 64; do
+		for DEBUG in yes no; do
+			test "$OS" = "win" -a "$BITS" = "64" && continue
+			name="$OS""$BITS"_"$DEBUG"
+			echo "Making: $name"
+			make OS=$OS BITS=$BITS DEBUG=$DEBUG clean all install clean > $name.log 2>&1
+		done
+	done
+done

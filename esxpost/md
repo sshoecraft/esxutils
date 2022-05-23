@@ -1,0 +1,8 @@
+for d in ../util ../soap ../vim ../db ../esxpost
+do
+	cd $d || exit 1
+	make clean
+	make DEBUG=yes
+done
+make clean
+make DEBUG=yes

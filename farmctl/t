@@ -1,0 +1,10 @@
+
+opt="configuration.dasConfig.defaultVmSettings.isolationResponse"
+opt="configuration.dasConfig.vmMonitoring"
+
+for o in `esxconf -s usodpwpvc001.uson.usoncology.int -u 'USON\svcvsphere' -t ComputeResource name | grep ^object | awk '{print $2 }'`
+do
+	test -z "$o" && continue
+	esxconf -s usodpwpvc001.uson.usoncology.int -u 'USON\svcvsphere' -o $o name $opt
+	echo ""
+done

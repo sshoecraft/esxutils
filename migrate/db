@@ -1,0 +1,34 @@
+
+if (0) {
+my ($vm_id) = vmdb::vms_select_id(0,$name);
+unless($vm_id) {
+	printf("error: unable to find vm in db!\n");
+	exit(1);
+}
+my $vm_rec = vmdb::vms_select($vm_id);
+unless($vm_rec) {
+	printf("error: unable to get vm rec for id: %s!\n",$vm_id);
+	exit(1);
+}
+#print Dumper($vm_rec);
+
+my ($host_id) = vmdb::hosts_select_id(0,$name);
+my ($host_rec) = vmdb::hosts_select($host_id);
+#print Dumper($host_rec);
+my ($farm_rec) = vmdb::farms_select($vm_rec->{farm_id});
+#print Dumper($farm_rec);
+
+my ($dest_farm_id) = vmdb::farms_select_id(0,$dest);
+my ($dest_farm_rec) = vmdb::farms_select($dest_farm_id);
+#print Dumper($dest_farm_id);
+if ($dest_farm_rec->{server} ne $farm_rec->{server}) {
+	printf("error: source VM and dest cluster must be on the same VC\n");
+	exit(1);
+}
+if ($farm_rec->{name} eq $dest_farm_rec->{name}) {
+	printf("%s: error: VM is already in the destination cluster\n");
+	exit(1);
+}
+$server = $farm_rec->{server};
+}
+

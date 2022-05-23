@@ -1,0 +1,13 @@
+wb 2 4 25 rhel6_64Guest uat-mfp-web01
+wb 2 4 25 rhel6_64Guest uat-mfp-web02
+wb 2 4 50 rhel6_64Guest uat-mfp-db01
+wb 2 4 50 rhel6_64Guest uat-mfp-db02
+wb 2 4 40 rhel6_64Guest uat-cas-sso01
+wb 2 4 40 rhel6_64Guest uat-cas-sso02
+wb 4 8 45 rhel5_64Guest uat-pwb-app01
+wb 4 8 45 rhel5_64Guest uat-pwb-app02
+wb 2 4 35 rhel5_64Guest uat-pwb-idm01
+wb 2 4 35 rhel5_64Guest uat-pwb-idm02
+wb 2 4 40 rhel4Guest uat-mws-sso01
+wb 4 8 50 rhel4Guest uat-mws-web01
+wb 4 8 50 rhel4Guest uat-mws-web02

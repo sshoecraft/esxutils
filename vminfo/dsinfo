@@ -1,0 +1,36 @@
+#!/bin/bash
+test -z "$1" && exit 1
+
+head=1
+while true
+do
+	case "$1" in
+	"-n")
+		head=0
+		shift
+		;;
+	*)
+		break;;
+	esac
+done
+
+FORMAT="%-20.20s  %-35.35s  %-20.20s  %10.10s  %10.10s  %3.3s\n"
+
+info=`mysql -N -B -e "select CONCAT_WS(',',id,total,free,round(100-((free/total)*100),0)) from datastores where name = '$1'"`
+dsid=`echo "$info" | awk -F, '{ print $1 }'`
+if test -z "$dsid"; then
+	echo "ERROR: unable to get datastore id for name: $1"
+	exit 1
+fi
+total=`echo "$info" | awk -F, '{ print $2 }'`
+free=`echo "$info" | awk -F, '{ print $3 }'`
+pct=`echo "$info" | awk -F, '{ print $4 }'`
+
+info=`mysql -N -B -e "select CONCAT_WS(',',farms.name,hosts.name) from hosts join farms ON (hosts.farm_id = farms.id) where hosts.id in (select host_id from host_datastore where datastore_id = $dsid) order by hosts.name LIMIT 1"`
+clust=`echo "$info" | awk -F, '{ print $1 }'`
+host=`echo "$info" | awk -F, '{ print $2 }'`
+if test $head -eq 1; then
+	printf "$FORMAT" "Cluster" "Host" "Datastore" "Total" "Free" "PCT"
+	printf "$FORMAT" "--------------------------------------------------" "-----------------------------------------" "------------------------------------------" "---------------------" "-------------------" "---"
+fi
+printf "$FORMAT" "$clust" "$host" "$1" "$total" "$free" "$pct"

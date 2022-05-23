@@ -1,0 +1,36 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+my $debug = 1;
+sub dprintf { my $level = shift; if ($debug >= $level) { print "#"; printf(@_); } }
+
+if (@ARGV < 1) {
+	printf("usage: $0 <password>\n");
+	exit 1;
+}
+
+# Test for switch
+my $esc = 0;
+my $ch = substr($ARGV[0],0,1);
+#printf("ch: %s\n", $ch);
+if ($ch eq '-') {
+	my $flag = shift;
+	$esc = 1 if ($flag eq "-e");
+}
+#printf("esc: %s\n", $esc);
+
+my $pass = shift;
+my @seeds = ('A'..'Z','a'..'z','-','/',0 ..9);
+my $seed;
+foreach my $i (0..7) {
+	$seed .= $seeds[int(rand(64))];
+}
+#print "\$seed is $seed\n";
+my $salt = '$1$';
+$salt .= $seed;
+#print "\$salt is $salt\n";
+my $enc_pass = crypt $pass, $salt;
+$enc_pass =~ s/\$/\\\$/g if ($esc == 1);
+dprintf(3,"enc_pass(1): %s\n", $enc_pass);
+printf("%s\n",$enc_pass);

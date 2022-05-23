@@ -1,0 +1,52 @@
+#!/bin/bash
+test -z "$1" && exit 1
+#
+VERSION="4.2.0"
+#
+if test -f ./mm; then
+	MM=./mm
+else
+	MM=/usr/local/bin/mm
+fi
+hosts=/tmp/upgrade_farm.hosts
+#
+send_sms() {
+	sms_file="/tmp/$1".sms
+	if test ! -f $sms_file; then
+		echo "Subject: $2" >> $sms_file
+		echo "" >> $sms_file
+		echo "$3" >> $sms_file
+		cat $tmp | /usr/sbin/sendmail "8325066368@mms.att.net"
+	fi
+}
+
+#rm -f /tmp/*.sms
+
+mysql -N -B -e "select name from hosts where version != '$VERSION' and farm_id = (select id from farms where name = '$1') ORDER BY name" > $hosts
+while read n
+do
+	echo "host: $n"
+	while true
+	do
+		$MM -t 3600 -e $n
+		status=$?
+		echo "status: $status"
+		if test $status -eq 254; then
+			send_sms $n "Alert" "Timeout waiting for $n to enter maintenance mode"
+		else
+			if test $status -ne 0; then
+				send_sms $n "Alert" "Error entering $n into maintenance mode (status: $status)"
+				exit 1
+			else
+				break
+			fi
+		fi
+	done
+	# XXX MAKE DAMN SURE HOST IS IN MM
+	state=`$MM -c $n`
+	if test "$state" != "true"; then
+		send_sms $n "Alert" "$n not in maint mode when it should be!"
+		exit 1
+	fi
+	/usr/bin/curl -s -S -N --user='americas\\$itxops:@pswar3Sucks' "https://g9w0317g.americas.hpqcorp.net/serverbuildws/server.asmx/Rebuild?ServerName=$n&User=americas\\$itxops"
+done < $hosts

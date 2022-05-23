@@ -1,0 +1,53 @@
+
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+use VMware::VIRuntime;
+use XML::LibXML;
+
+use Sys::Virt;
+use Data::Dumper;
+
+my $uri = 'esx://vm-misc12-15a/?no_verify=1';
+my $username = 'root';
+my $password = 'k1n0bi!';
+
+my $vmm = Sys::Virt->new(uri => $uri, auth => 1, credlist => [ Sys::Virt::CRED_AUTHNAME, Sys::Virt::CRED_PASSPHRASE, ],
+		callback => sub {
+			my $creds = shift;
+			foreach my $cred (@{$creds}) {
+				$cred->{result} = $username if ($cred->{type} == Sys::Virt::CRED_AUTHNAME);
+				$cred->{result} = $password if ($cred->{type} == Sys::Virt::CRED_PASSPHRASE);
+			}
+			return 0;
+		});
+#print Dumper($vmm);
+#exit(0);
+
+my @domains = $vmm->list_domains();
+#print Dumper(@domains);
+
+foreach my $dom (@domains) {
+	print "Domain ", $dom->get_id, " ", $dom->get_name, "\n";
+}
+
+#my $parser = XML::LibXML->new();
+#my $tree = $parser->parse_file("try.xml");
+#my $root = $tree->getDocumentElement;
+#my @vms = $root->findnodes('Virtual-Machine');
+
+open(IN,"try.xml") or die;
+my $xml = "";
+foreach (<IN>) {
+	chomp($_);
+	$xml .= $_;
+}
+#my $xml = do { local $/; <IN> };
+printf("xml: %s\n", $xml);
+close(IN);
+
+#my $dom = $vmm->define_domain($xml);
+#Sys::Virt::Domain->_new(connection => $vmm, xml => $xml, nocreate => 1);
+Sys::Virt::Domain::_define_xml($vmm,  $xml);
+#print Dumper($dom);

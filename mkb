@@ -1,0 +1,9 @@
+#!/bin/bash
+for i in *
+do
+	test -d "$i" || continue
+	test "$i" = "archive" && continue
+	test "$i" = "old" && continue
+	echo $i
+	tar -zcf ~/backup/$i.tgz $i
+done

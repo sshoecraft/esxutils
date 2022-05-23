@@ -1,0 +1,33 @@
+#!/usr/bin/perl
+use CGI;
+use Switch;
+
+my $FROM = "Builder <builder\@usoncology.com>";
+my $TO="stephen.shoecraft\@mckesson.com MSHWindowsServerTeam\@usoncology.com";
+
+my $debug = 0;
+sub dprintf { my $level = shift; if ($debug >= $level) { print "#"; printf(@_) } }
+
+my $q = new CGI;
+print $q->header();
+
+my $host = $q->param('host');
+$host = "invalid" unless($host);
+$host = $ARGV[0] if ($ARGV[0]);
+my $status = $q->param('status');
+$status = "Info" unless($status);
+$status = $ARGV[1] if ($ARGV[1]);
+my $msg  = $q->param('msg');
+$msg = "none" unless($msg);
+$msg = $ARGV[2] if ($ARGV[2]);
+dprintf(1,"host: %s, status: %s, msg: %s\n", $host, $status, $msg);
+$host =~ tr/[a-zA-Z0-9\.//c;
+my $now=`date`; chomp($now);
+system("echo '[$now] $status: $msg' >> /var/log/builds/$host.log 2>/dev/null");
+if ($msg eq "Finished") {
+#	system("echo \"$msg\" | mail -s \"$host build complete\" $TO");
+	system("echo \"\" | mail -r \"$FROM\" -s \"$host build complete\" $TO");
+} elsif ($status eq "Fail") {
+	system("echo \"$msg\" | mail -r \"$FROM\" -s \"$host build failed!\" $TO");
+}
+#system("echo [`date +%Y%m%d%H%M`] '\$host=\"$host\";\$status=\"$status\";\$msg=\"$msg\";' >> /var/tmp/build.log 2>/dev/null");

@@ -1,0 +1,6 @@
+i=1
+while test $i -lt 256; do
+	n=`printf "%03d" $i`
+	h=`host usodplpvm$n | tail -1 | grep "has address" | awk '{ print $NF }' | awk -F. '{ print $1"."$2"."$3 }'`
+	let i=$i+1
+done

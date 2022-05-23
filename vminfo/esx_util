@@ -1,0 +1,142 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use DBI;
+
+my $server = "tools.uprd.usoncology.unx";
+my $debug = 3;
+my $max = 0;
+my $count = 0;
+
+sub dprintf { my $level = shift; printf(@_) if ($debug >= $level); }
+
+$max = 1 if ($ARGV[0]);
+ 
+my $dbh = DBI->connect("DBI:mysql:esxadmin:$server",'esxadmin_ro') or die "Couldn't connect to database: " . DBI->errstr;
+my $hosts = $dbh->prepare("SELECT id,name,model,cpu_count,cpu_speed,cpu_total FROM hosts ORDER BY name");
+my $util;
+if ($max) {
+	$util = $dbh->prepare("SELECT max(cpu) FROM host_perf WHERE host_id = ? AND time >= ?");
+	printf("                 Max utilization values\n");
+} else {
+	$util = $dbh->prepare("SELECT avg(cpu) FROM host_perf WHERE host_id = ? AND time >= ?");
+	printf("               Average utilization values\n");
+}
+printf("\n");
+my $vms = $dbh->prepare("SELECT count(*) FROM vms WHERE host_id = ?");
+my $vm_cpu = $dbh->prepare("SELECT sum(cpu_total) FROM vms WHERE host_id = ? AND cpu_total > 0");
+my (@rec,$host_id,$host_name,$host_model,$cpu_count,$cpu_speed,$cpu_total,$cpu_util,$vm_count,$vcpu_count,$upv);
+my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst);
+
+my $hformat = "%-30.30s %-20.20s %2s %5s %5s %5s %3s %3s %5s\n";
+my $format =  "%-30.30s %-20.20s %2d %5d %5d %5d %3d %3d %5d\n";
+
+($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = gmtime(time - 2592000);
+my $thirty_days_ago = sprintf("%04d-%02d-%02d %02d:%02d:00", $year+1900,$mon+1,$mday,$hour,$min);
+dprintf(1,"thirty_days_ago: %s\n", $thirty_days_ago);
+
+($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = gmtime(time - 604800);
+my $one_week_ago = sprintf("%04d-%02d-%02d %02d:%02d:00", $year+1900,$mon+1,$mday,$hour,$min);
+dprintf(1,"one_week_ago: %s\n", $one_week_ago);
+
+printf($hformat,"host","model","nc","speed","total","util"," % ","vc","mhz");
+printf($hformat,"---------------------------------------------","----------------------------------","--","-----","-----","-----","---","---","-----");
+
+my ($sum_cpu_count, $sum_cpu_speed, $sum_cpu_total, $sum_cpu_util, $sum_pct, $sum_vcpu_count, $sum_upv);
+$sum_cpu_count = $sum_cpu_speed = $sum_cpu_total = $sum_cpu_util = $sum_pct = $sum_vcpu_count = $sum_upv = 0;
+my $total_count = 0;
+my $pct;
+
+$hosts->execute() or die;
+exit 1 if ($hosts->rows < 1);
+while(@rec = $hosts->fetchrow_array()) {
+	($host_id,$host_name,$host_model,$cpu_count,$cpu_speed,$cpu_total) = @ rec;
+	$cpu_speed = -1 if (!$cpu_speed);
+
+if (0) {
+	printf("id: %d\n", $host_id);
+	printf("name: %s\n", $host_name);
+	printf("model: %s\n", $host_model);
+	printf("count: %d\n", $cpu_count);
+	printf("speed: %d\n", $cpu_speed);
+}
+
+	$util->execute($host_id,$thirty_days_ago) or die;
+	$cpu_util = 0;
+	if ($util->rows > 0) {
+		@rec = $util->fetchrow_array();
+		foreach (@rec) {$_ = 0 unless defined};
+		($cpu_util) = @rec;
+	} 
+#	printf("total: %d, util: %d\n", $cpu_total, $cpu_util);
+	next if (!$cpu_util);
+
+if (0) {
+	$vms->execute($host_id) or die;
+	$vm_count = 0;
+	if ($vms->rows > 0) {
+		@rec = $vms->fetchrow_array();
+		foreach (@rec) {$_ = 0 unless defined};
+		($vm_count) = @rec;
+	} 
+#	printf("vm count: %d\n", $vm_count);
+}
+
+	$vm_cpu->execute($host_id) or die;
+	$vcpu_count = 0;
+	if ($vm_cpu->rows > 0) {
+		@rec = $vm_cpu->fetchrow_array();
+		foreach (@rec) {$_ = 0 unless defined};
+		($vcpu_count) = @rec;
+	} 
+#	printf("vcpu_count: %d\n", $vcpu_count);
+	next if (!$vcpu_count);
+
+	$pct = "0";
+	if ($cpu_util && $cpu_total) {
+		$pct = sprintf("%2.0f",($cpu_util / $cpu_total) * 100.0);
+	}
+
+	$upv = 0;
+	if ($cpu_util && $vcpu_count) {
+		$upv = $cpu_util / $vcpu_count;
+	}
+
+if (0) {
+	printf("host_name:  %s\n", $host_name);
+	printf("host_model: %s\n", $host_model);
+	printf("cpu_count:  %d\n", $cpu_count);
+	printf("cpu_speed:  %d\n", $cpu_speed);
+	printf("cpu_total:  %d\n", $cpu_total);
+	printf("cpu_util:   %d\n", $cpu_util);
+	printf("vcpu_count: %d\n", $vcpu_count);
+	printf("upv:        %d\n", $upv);
+}
+
+	printf($format, $host_name, $host_model, $cpu_count, $cpu_speed, $cpu_total, $cpu_util, $pct, $vcpu_count, $upv);
+	$sum_cpu_count += $cpu_count;
+	$sum_cpu_speed  += $cpu_speed;
+	$sum_cpu_total += $cpu_total;
+	$sum_cpu_util += $cpu_util;
+	$sum_pct += $pct;
+	$sum_vcpu_count += $vcpu_count;
+	$sum_upv += $upv;
+	$total_count++;
+	last if ($count && $total_count > $count);
+}
+printf($hformat,"---------------------------------------------","----------------------------------","--","-----","-----","-----","--","--","---");
+
+# Calc averages
+my ($avg_cpu_count, $avg_cpu_speed, $avg_cpu_total, $avg_cpu_util, $avg_pct, $avg_vcpu_count, $avg_upv);
+$avg_cpu_count = $sum_cpu_count / $total_count;
+$avg_cpu_speed = $sum_cpu_speed / $total_count;
+$avg_cpu_total = $sum_cpu_total / $total_count;
+$avg_cpu_util = $sum_cpu_util / $total_count;
+$avg_pct = $sum_pct / $total_count;
+$avg_vcpu_count = $sum_vcpu_count / $total_count;
+$avg_upv = $sum_upv / $total_count;
+
+my $hline = sprintf("Averages (%d hosts)", $total_count);
+printf($format, $hline, "", $avg_cpu_count, $avg_cpu_speed, $avg_cpu_total, $avg_cpu_util, $avg_pct, $avg_vcpu_count, $avg_upv);
+
+#printf("Overall %s mhz per vcpu: %d\n", ($max ? "Max" : "Avg"), $sum_upv / $total_count);

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+FILES="getconf"
+#DIR=/var/opt/LinuxCOE/VMWare/scripts
+DIR=/var/opt/LinuxCOE/scripts
+
+mkdir -p $DIR && cd $DIR || exit 1
+rm -f firstboot get_conf
+for f in $FILES 
+do
+	mv -f /tmp/$f . && chmod 0644 $f
+done

@@ -1,0 +1,6 @@
+make || exit 1
+gdb ./get_perf << EOF
+set args -s g3t0001h.houston.hp.com
+run
+bt
+EOF

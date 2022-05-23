@@ -1,0 +1,6 @@
+make -j $MAKE_JOBS DEBUG=yes clean
+make -j $MAKE_JOBS DEBUG=yes
+make -j $MAKE_JOBS DEBUG=yes install
+make -j $MAKE_JOBS DEBUG=no clean
+make -j $MAKE_JOBS DEBUG=no
+make -j $MAKE_JOBS DEBUG=no install

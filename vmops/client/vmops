@@ -1,0 +1,19 @@
+#!/usr/bin/perl
+use CGI;
+
+my $debug = 0;
+sub dprintf { my $level = shift; printf(@_) if ($debug >= $level); }
+
+my $SERVER = "tools.uprd.usoncology.unx";
+
+my $q = new CGI;
+print $q->header();
+my $hostname = $q->param('hostname');
+my $action = $q->param('action');
+my $args = $q->param('args');
+$args =~ s/ /%20/g;
+my $wg = "/usr/bin/curl -s -S -N \'http://$SERVER/cgi-bin/vmops?hostname=$hostname&action=$action&args=$args\'";
+dprintf(1,"#cmd: %s\n", $wg);
+open(WG,"$wg |");
+while(<WG>) { print }
+close(WG); wait;

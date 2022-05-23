@@ -1,0 +1,502 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Data::Dumper;
+use VMware::VIRuntime;
+#use Term::ANSIColor;
+use Getopt::Std;
+
+my $MIGRATE_VERSION = 1.5;
+# 1.0 2013?	init version
+# 1.1 10/15/20	added conf file/dry run/skip_os
+# 1.2 10/16/20	dont select a dest host that is in maint mode or powered off or not avail
+# 1.3 11/1/20	add local conf
+# 1.4 11/2/20	add do_time and sync_time
+# 1.5 11/3/20	do not power back on if it was powered off
+
+use lib qw (/usr/local/lib/perl);
+use utils;
+
+$debug = 0;
+my $local_conf = "/usr/local/etc/migrate.conf";
+
+# Default vars
+my $vcserver = "";
+my $cluster = ""; 
+my $do_snap = 1;
+my $do_hwupg = 1;
+my $skip_os = "";
+my $target_hw_version = undef;
+my $do_numa = 1;
+my $do_cpuhot = 1;
+my $do_memhot = 1;
+my $do_tools = 0;
+my $do_time = 1;
+my $sync_time = 0;
+my $do_power = 1;
+my $dry_run = 0;
+
+my %opts;
+getopts('d:c:r', \%opts);
+#print Dumper(%opts);
+
+my $snapshot_name = "migration";
+
+my $conf = undef;
+if (defined($opts{c})) {
+	$conf = $opts{c};
+} elsif (-f $local_conf) {
+	$conf = $local_conf;
+}
+if (defined($conf)) {
+	dprintf(3,"conf: %s\n", $opts{c});
+	open(my $IN, "<", $conf) or die "$0: Can't open input file $conf: $!\n";
+	dprintf(3,"conf opened.\n");
+	my %hash;
+	while (<$IN>) {
+		chomp;
+		dprintf(3,"conf line: %s\n", $_);
+		my ($key, $value) = split /=/;
+		next unless defined $value;
+		$key =~ s/^\s+|\s+$//g;
+		$value =~ s/^\s+|\s+$//g;
+		$value =~ s/yes/1/;
+		$value =~ s/no/0/;
+		dprintf(3,"key: %s, value: %s\n", $key, $value);
+		my $cmd = '$' . $key . ' = ' . $value . ';';
+		dprintf(3,"cmd: %s\n", $cmd);
+		eval $cmd;
+	}
+}
+$debug = $opts{d} if (defined($opts{d}));
+$dry_run = 1 if (defined($opts{r}));
+
+if ($debug >= 3) {
+	printf("vars:\n");
+	printf("vcserver: %s\n", $vcserver);
+	printf("cluster: %s\n", $cluster);
+	printf("do_snap: %s\n", $do_snap);
+	printf("do_hwupg: %s\n", $do_hwupg);
+	printf("target_hw_version: %s\n", $target_hw_version) if (defined($target_hw_version));
+	printf("skip_os: %s\n", $skip_os);
+	printf("do_numa: %s\n", $do_numa);
+	printf("do_cpuhot: %s\n", $do_cpuhot);
+	printf("do_memhot: %s\n", $do_memhot);
+	printf("do_tools: %s\n", $do_tools);
+	printf("sync_time: %s\n", $sync_time);
+	printf("do_power: %s\n", $do_power);
+	printf("dry_run: %d\n", $dry_run);
+}
+
+my $name = $ARGV[0];
+exit 0 unless($name);
+dprintf(0,"VM name: %s\n", $name);
+
+my $dest = $ARGV[1];
+$dest = $cluster unless($dest);
+dprintf(0,"Destination Cluster: %s\n", $dest);
+
+my $server = $ARGV[2];
+$server = $vcserver unless($server);
+dprintf(3,"server: %s\n", $server);
+
+my ($dnsname,$aliases,$addrtype,$length,@addrs) = gethostbyname($server);
+unless($dnsname) {
+	printf("error: unable to resolve: %s\n", $server);
+	exit(1);
+} else {
+	$server = $dnsname;
+	dprintf(3,"NEW server: %s\n", $server);
+}
+dprintf(0,"VMware server: %s\n", $server);
+
+# Get user and pass
+my $user = `cat /usr/local/etc/.vim  | grep "^$server" | head -1 | awk '{ print \$2 }'`;
+chomp($user);
+$user = "" unless($user);
+if (!length($user)) {
+	printf("error: unable to find user for server, aborting\n");
+	exit(1);
+}
+my $pass = `/usr/local/bin/vim_cred -g -x -s '$server' -u '$user'`;
+chomp($pass);
+dprintf(999,"user: %s, pass: %s\n", $user, $pass);
+
+dprintf(0,"Connecting to server...\n");
+$ENV{'VI_PROTOCOL'} = 'https';
+$ENV{'VI_SERVER'} = $server;
+$ENV{'VI_SERVICEPATH'} = '/sdk';
+$ENV{'VI_USERNAME'} = $user;
+$ENV{'VI_PASSWORD'} = $pass;
+Opts::parse();
+#Opts::validate();
+dprintf(3,"Connecting...\n");
+Util::connect();
+
+# Get VM
+dprintf(0,"Gathering info...\n");
+my $vm = Vim::find_entity_view( view_type => 'VirtualMachine', filter => { 'name' => qr/^$name$/i });
+unless($vm) {
+	printf("error: unable to find vm in inventory!\n");
+	exit(1);
+}
+#print Dumper($vm);
+# Get the powerstate
+my $powerState = $vm->runtime->powerState->val;
+dprintf(3,"powerState: %s\n", $powerState);
+
+# Get current Host
+my $host = Vim::get_view(mo_ref => $vm->runtime->host);
+unless($host) {
+	printf("error: unable to find host in inventory!\n");
+	exit(1);
+}
+#print Dumper($host);
+dprintf(1,"host: %s\n", $host->{name});
+
+# Get current Cluster
+$cluster = Vim::get_view(mo_ref => $host->parent);
+$cluster = Vim::get_view( mo_ref => $cluster->parent ) if ($host->parent->type eq "ComputeResource");
+#print Dumper($cluster);
+dprintf(1,"cluster: %s\n", $cluster->{name});
+
+# Find destination Cluster
+my $dest_cluster = Vim::find_entity_view( view_type => 'ClusterComputeResource', filter => { 'name' => $dest });
+unless($dest_cluster) {
+	printf("error: unable to find dest cluster in inventory!\n");
+	exit(1);
+}
+#print Dumper($dest_cluster);
+if (!$dry_run) {
+	if ($dest_cluster->{name} eq $cluster->{name}) {
+		if ($powerState ne "poweredOff") {
+			printf("vm is already in dest cluster and not powered off, aborting\n");
+			exit(1);
+		}
+	}
+}
+
+# before we shutdown, see if we can find a suitable target host
+my $dest_host;
+my $found_host = 0;
+my ($vmds,$hostds);
+dprintf(0,"Finding destination host...\n");
+foreach (@{$dest_cluster->{host}}) {
+	$dest_host = Vim::get_view(mo_ref => $_);
+	dprintf(3,"checking host: %s\n", $dest_host->{name});
+	# Must be powered on
+	dprintf(3,"summary->runtime->powerState: %s\n", $dest_host->summary->runtime->powerState->val);
+	next if ($dest_host->summary->runtime->powerState->val ne "poweredOn");
+	# Must be connected
+	dprintf(3,"summary->runtime->connectionState: %s\n", $dest_host->summary->runtime->connectionState->val);
+	next if ($dest_host->summary->runtime->connectionState->val ne "connected");
+	# Must not be in maint mode
+	dprintf(3,"summary->runtime->inMaintenanceMode: %s\n", $dest_host->summary->runtime->inMaintenanceMode);
+	next if ($dest_host->summary->runtime->inMaintenanceMode);
+	# Make sure host has all datastores specified in the VM
+	my $all_found = 1;
+	foreach $vmds (@{$vm->{datastore}}) {
+#		print Dumper($vmds);
+		dprintf(3,"vmds value: %s\n", $vmds->{value});
+		my $found = 0;
+		foreach $hostds (@{$dest_host->{datastore}}) {
+			dprintf(3,"hostds value: %s\n", $hostds->{value});
+			if ($hostds->{value} eq $vmds->{value}) {
+				$found=1;
+				last;
+			}
+		}
+		dprintf(3,"found: %s\n", $found);
+		if (!$found) {
+			$all_found = 0;
+			last;
+		}
+	}
+	dprintf(3,"all_found: %s\n",$all_found);
+	if ($all_found) {
+		$found_host = 1;
+		last;
+	}
+}
+dprintf(3,"found_host: %s\n",$found_host);
+if (!$found_host) {
+	printf("error: unable to find destination host that shares datastore!\n");
+	exit(1);
+}
+dprintf(0,"Selected host: %s\n", $dest_host->{name});
+
+sub getStatus {
+        my ($taskRef,$message) = @_;
+
+        my $task_view = Vim::get_view(mo_ref => $taskRef);
+#        my $taskinfo = $task_view->info->state->val;
+        my $continue = 1;
+        while ($continue) {
+                my $info = $task_view->info;
+                if ($info->state->val eq 'success') {
+#                        print $message,"\n";
+                        return $info->result;
+                        $continue = 0;
+                } elsif ($info->state->val eq 'error') {
+                        my $soap_fault = SoapFault->new;
+                        $soap_fault->name($info->error->fault);
+                        $soap_fault->detail($info->error->fault);
+                        $soap_fault->fault_string($info->error->localizedMessage);
+                        die "$soap_fault\n";
+                }
+                sleep 2;
+                $task_view->ViewBase::update_view_data();
+        }
+}
+
+# 1. Shutdown guest & wait for it to power off.
+dprintf(3,"powerState: %s\n", $vm->runtime->powerState->val);
+if ($vm->runtime->powerState->val ne "poweredOff") {
+	dprintf(0,"Shutting down...\n");
+if (!$dry_run) {
+	# Shut it down
+	my $toolsStatus = $vm->summary->guest->toolsStatus->val;
+	dprintf(1,"toolsStatus: %s\n", $toolsStatus);
+	if ($toolsStatus eq "toolsOk" || $toolsStatus eq "toolsOld") {
+		eval { $vm->ShutdownGuest(); };
+		if ($@) {
+			if ($@ =~ /VMware Tools is not running/) {
+				printf("error: tools not running, unable to shutdown\n",$name); 
+			} else {
+				if (ref $@ eq "SoapFault" && defined $@->{fault_string}) {
+					Util::fail("ShutdownGuest: " . $@->{fault_string});
+				} else {
+					Util::fail("$@");
+				}
+			}
+			exit(1);
+		}
+	} else {
+		printf("error: tools not running, unable to shutdown\n",$name);
+		exit(1);
+	}
+	# Wait for it to power off
+	my $mor = $vm->{mo_ref};
+	my $retries = 180;
+	while($vm->runtime->powerState->val ne "poweredOff") {
+		if ($retries-- < 1) {
+			printf("timeout waiting for vm to shutdown!\n");
+			exit(1);
+		}
+		sleep(5);
+		$vm = Vim::get_view( mo_ref => $mor );
+		dprintf(3,"powerState: %s\n", $vm->runtime->powerState->val);
+	}
+}
+}
+
+# 2. Migrate to new cluster (if not already there)
+if ($dest_cluster->{name} ne $cluster->{name}) {
+	# Find a target resource pool
+	my $target_pools = Vim::find_entity_views(view_type => 'ResourcePool');
+	my $target_pool = undef;
+	foreach(@{$target_pools}) {
+#		dprintf(3,"parent: %s\n", $_->parent->value);
+#		dprintf(3,"clust: %s\n", $dest_cluster->{mo_ref}->value);
+		next if ($_->parent->type ne $dest_cluster->{mo_ref}->type);
+		if ($_->parent->value eq $dest_cluster->{mo_ref}->value) {
+			$target_pool = $_;
+			last;
+		}
+	}
+	unless ($target_pool) {
+		dprintf(0,"error: unable to find resource pool!\n");
+		exit(1);
+	}
+
+	# Do the migration
+	dprintf(0,"Migrating...\n");
+	if (!$dry_run) {
+		my $task = $vm->MigrateVM_Task(
+			host => $dest_host,
+			pool => $target_pool,
+			priority => VirtualMachineMovePriority->new('defaultPriority'),
+			state => VirtualMachinePowerState->new('poweredOff'),
+		);
+		getStatus($task,$vm->{name} . ": Migration successful");
+		dprintf(0,"Waiting for VM to settle...\n");
+		sleep(20);
+	}
+}
+
+sub _snapname {
+	my ($snap,$obj) = @_;
+ 
+	dprintf(3,"snapshot: value: %s, obj: %s\n", $snap->vm->value,$obj);
+	if ($snap->snapshot->value eq $obj) {
+		dprintf(3,"found: %s\n", $snap->name);
+		return $snap->name;
+	}
+	if ($snap->childSnapshotList) {
+		foreach (@{$snap->childSnapshotList}) {
+			return _snapname($_, $obj);
+		}
+	}
+}
+
+# Check if snap already exists
+if ($do_snap) {
+	if (defined($vm->snapshot)) {
+#		print Dumper($vm->snapshot);
+		foreach (@{$vm->snapshot->rootSnapshotList}) {
+			my $name = _snapname($_, $vm->snapshot->currentSnapshot->value);
+			$name = "" unless($name);
+			dprintf(2,"Current snapshot name: %s\n", $name);
+			$do_snap = 0 if ($name eq $snapshot_name);
+		}
+	}
+}
+
+# 3. Snapshot
+if ($do_snap) {
+	dprintf(0,"Taking a snapshot...\n");
+	if (!$dry_run) {
+		# no mem or quiesce because vm is supposed to be off
+		my $ss_task = $vm->CreateSnapshot_Task(name => $snapshot_name,
+			description => 'Pre-upgrade snapshot',
+			memory => 0,
+			quiesce => 0);
+		getStatus($ss_task,$vm->{name} . ": Snapshot successful");
+	}
+}
+
+# Skip HW upg if skip_os set and guestId is set os
+if ($do_hwupg && $skip_os) {
+	dprintf(3,"guestId: %s\n", $vm->summary->config->guestId);
+	if ($vm->summary->config->guestId eq $skip_os) {
+		$do_hwupg = 0;
+	}
+}
+
+# 4. Upgrade VM HW
+if ($do_hwupg) {
+	if (defined($target_hw_version)) {
+		dprintf(3,"current vm hw version: %s\n", $vm->config->version);
+		if ($vm->config->version ne $target_hw_version) {
+			dprintf(0,"Upgrading VM Hardware to: %s\n", $target_hw_version);
+			if (!$dry_run) {
+				eval { $vm->UpgradeVM_Task(version => $target_hw_version); };
+			}
+		}
+	} else {
+		dprintf(0,"Upgrading VM Hardware\n");
+		if (!$dry_run) {
+			eval { $vm->UpgradeVM(); };
+		}
+	}
+}
+
+# 5. Make cores = sockets
+if ($do_numa) {
+	dprintf(1,"numCPU: %s, numCoresPerSocket: %s\n", $vm->config->{hardware}->{numCPU},
+		$vm->config->{hardware}->{numCoresPerSocket});
+	if ($vm->config->{hardware}->{numCoresPerSocket} != $vm->config->{hardware}->{numCPU}) {
+		dprintf(0,"Making cores = sockets for vNUMA\n");
+		if (!$dry_run) {
+			my $spec = VirtualMachineConfigSpec->new(numCoresPerSocket => $vm->config->{hardware}->{numCPU});
+			eval {
+				my $task = $vm->ReconfigVM_Task(spec => $spec);
+				getStatus($task,$vm->{name} . ": CPU reconfig successful");
+			};
+		}
+	}
+}
+
+# IF < 9 vcpu
+if ($do_cpuhot) {
+	if ($vm->config->{hardware}->{numCPU} < 9) {
+		# 4. CPU Hot-add (ignore error)
+		dprintf(1,"cpuHotAddEnabled: %d\n", $vm->config->{cpuHotAddEnabled});
+		if (!$vm->config->{cpuHotAddEnabled}) {
+			dprintf(0,"Enabling CPU hotplug...\n");
+			if (!$dry_run) {
+				my $spec = VirtualMachineConfigSpec->new(cpuHotAddEnabled => 'true');
+				eval {
+					my $task = $vm->ReconfigVM_Task(spec => $spec);
+					getStatus($task,$vm->{name} . ": CPU reconfig successful");
+				};
+			}
+		}
+	}
+}
+
+# 5. Mem Hot-add (ignore error)
+if ($do_memhot) {
+	dprintf(1,"memoryHotAddEnabled: %d\n", $vm->config->{memoryHotAddEnabled});
+#	print Dumper($vm->config);
+	if (!$vm->config->{memoryHotAddEnabled}) {
+		dprintf(0,"Enabling Memory hotplug...\n");
+		if (!$dry_run) {
+			eval {
+				my $spec = VirtualMachineConfigSpec->new(memoryHotAddEnabled => 'true');
+				my $task = $vm->ReconfigVM_Task(spec => $spec);
+				getStatus($task,$vm->{name} . ": Memory reconfig successful");
+			};
+		}
+	}
+}
+
+# 6. Set tools upgrade policy
+if ($do_tools) {
+	my $tools = $vm->config->tools;
+	dprintf(1,"afterPowerOn: %d, syncTimeWithHost: %d, beforeGuestStandby: %d, afterResume: %d, beforeGuestShutdown: %d, toolsUpgradePolicy: %s\n", $tools->{afterPowerOn},$tools->{syncTimeWithHost},$tools->{beforeGuestStandby},$tools->{afterResume},$tools->{beforeGuestShutdown},$tools->{toolsUpgradePolicy});
+	if ($tools->{afterPowerOn} == 0 || $tools->{syncTimeWithHost} == 0 ||
+			$tools->{beforeGuestStandby} == 1 || $tools->{afterResume} == 1 ||
+			$tools->{beforeGuestShutdown} == 0 || $tools->{toolsUpgradePolicy} != "upgradeAtPowerCycle") {
+		dprintf(0,"Setting tools upgrade policy...\n");
+		if (!$dry_run) {
+			my $syncstr = $sync_time == 0 ? 'false' : 1;
+			dprintf(3,"syncstr: %s\n", $syncstr);
+			eval {
+				my $toolsConfig = ToolsConfigInfo->new(
+					afterPowerOn => 'true',
+					afterResume => 'false',
+					beforeGuestStandby => 'false',
+					beforeGuestShutdown => 'true',
+					toolsUpgradePolicy => 'upgradeAtPowerCycle',
+					syncTimeWithHost => $syncstr,
+				);
+				my $spec = VirtualMachineConfigSpec->new(tools => $toolsConfig);
+				my $task = $vm->ReconfigVM_Task(spec => $spec);
+				getStatus($task,$vm->{name} . ": Tools policy reconfig successful");
+			};
+		}
+		# We did it already
+		$do_time = 0;
+	}
+}
+
+if ($do_time) {
+	dprintf(1,"syncTimeWithHost: %d\n", $vm->config->tools->{syncTimeWithHost});
+	if ($vm->config->tools->{syncTimeWithHost} != $sync_time) {
+		my $syncstr = ($sync_time == 0 ? 'false' : 1);
+		dprintf(3,"syncstr: %s\n", $syncstr);
+		dprintf(0,"Setting syncTimeWithHost to %s...\n",$syncstr);
+		if (!$dry_run) {
+			eval {
+				my $toolsConfig = ToolsConfigInfo->new(
+					syncTimeWithHost => $syncstr,
+				);
+				my $spec = VirtualMachineConfigSpec->new(tools => $toolsConfig);
+				my $task = $vm->ReconfigVM_Task(spec => $spec);
+				getStatus($task,$vm->{name} . ": Tools policy reconfig successful");
+			};
+		}
+	}
+}
+
+# 6. Power on
+if ($do_power && $powerState ne "poweredOff") {
+	dprintf(0,"Powering on...\n");
+	if (!$dry_run) {
+		eval { $vm->PowerOnVM(); };
+	}
+}
+
+dprintf(0,"Done!\n");
+exit(0);

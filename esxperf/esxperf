@@ -1,0 +1,20 @@
+#!/bin/bash
+#
+THREADS=64
+#
+dir=`dirname $0`
+flag=$dir/esxperf.running
+trap '{ echo "Aborting." ; rm -f $flag; exit 1; }' INT TERM ABRT
+if test -f $flag; then
+	echo "esxperf already running, aborting."
+	exit 0
+fi
+echo "`date` starting"
+touch $flag
+if test -n "$1"; then
+	/usr/local/bin/worker $1 $THREADS $dir/get_perf -s
+else
+	/usr/local/bin/worker $HOME/etc/esxservers $THREADS $dir/get_perf -s
+fi
+echo "`date` finished"
+rm -f $flag

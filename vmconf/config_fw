@@ -1,0 +1,4 @@
+#!/bin/bash
+esxcfg-firewall -o 12345,tcp,out,pbmasterd
+esxcfg-firewall -o 12346,tcp,in,pblocald
+exit 0

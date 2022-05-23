@@ -1,0 +1,376 @@
+#!/bin/bash
+
+FROM="ESXAdmin <esxadmin@usoncology.com>"
+TO="stephen.shoecraft@mckesson.com MSHWindowsServerTeam@usoncology.com"
+SMS="8323684699@messaging.sprintpcs.com 9165056202@txt.att.net 8323722455@messaging.sprintpcs.com 6027337225@messaging.sprintpcs.com"
+ME="stephen.shoecraft@mckesson.com"
+
+let verbose=1
+let debug_level=0
+only_me=0
+
+decho() {
+	level=$1
+	shift
+	test $level -ge $debug_level && echo "[`date`] $*"
+}
+
+# Number of times not connected before ticketing
+NUM_TIMES=4
+THREADS=64
+MONITOR_VC=1
+MONITOR_HOSTS=1
+MONITOR_DS=1
+CREATE_TICKET=0
+ARCHIVE=0
+# Anything below this will trigger an alert
+DS_THRESHOLD_PCT=1
+
+t=`readlink -f $0`
+test -z "$t" && t="$0"
+me=`basename $t`
+#decho "me: $me"
+mydir=`dirname $t`
+getinfo=$mydir/esxmon_getinfo
+tmp0=/dev/shm/"$me"0.dat
+tmp1=/dev/shm/"$me"1.dat
+tmp2=/dev/shm/"$me"2.dat
+tmp3=/dev/shm/"$me"3.dat
+
+if test $only_me -eq 1; then
+	TO="$ME"
+	SMS=""
+fi
+
+cleanup() {
+	rm -f $tmp0 $tmp1 $tmp2 $tmp3
+	exit 0
+}
+trap cleanup EXIT
+
+servers=$HOME/etc/"$me"_servers
+ignore=$HOME/etc/"$me"_ignore
+test -f $ignore || touch $ignore
+log=$HOME/logs/"$me".log
+rebootlog=$HOME/logs/reboot.log
+
+gen_ticket() {
+	cmdb=`/usr/local/bin/pulldb -crue $1`
+	sla=`echo $cmdb | awk -F, '{ print $2 }'`
+	test -z "$sla" && sla="unknown"
+	case $sla in
+	"Mission Critical")
+		impact=1;;
+	"Entity Essential")
+		impact=2;;
+	Normal)
+		impact=3;;
+	*)
+		impact=4;;
+	esac
+	status=`echo $cmdb | awk -F, '{ print $3 }'`
+	test -z "$status" && status="unknown"
+	case $status in
+	active) ;;
+	unknown|release) impact=4;;
+	decommissioned | "move to obsolescence")
+		echo $1 >> $ignore
+		return;;
+	*)
+		echo "unknown status: $status"
+		return;;
+	esac
+#	env=`echo $cmdb | awk -F, '{ print $4 }'`
+#	test "$env" != "Production" && impact=4
+	# Re-check status
+	status=`/usr/local/bin/esxstatus $1`
+#	echo "status: $status"
+	if test `echo "$status" | awk -F: '{ print $2 }' | grep -c OK` -gt 0; then
+		return
+	fi
+	cat $HOME/etc/ticket_template.xml > $tmp3
+	sed -i -e "s:__TO__:$TO:" $tmp3
+	sed -i -e "s:__CC__:$CC:" $tmp3
+	sed -i -e "s:__RT__:$RT:" $tmp3
+	sed -i -e "s:__CI__:$1:" $tmp3
+	sed -i -e "s:__DESCRIPTION__:$1 has an error:" $tmp3
+	sed -i -e "s~__INFORMATION__~$status~" $tmp3
+	sed -i -e "s:__IMPACT__:$impact:" $tmp3
+	cat $tmp3 | /usr/sbin/sendmail -r $TO -t
+}
+
+notify() {
+	if test $1 -eq 1; then
+		while read name
+		do
+			gen_ticket $name
+		done < $tmp2
+	fi
+	if test -n "$TO"; then
+		echo "From: $FROM" > $tmp3
+		echo "Subject: $2" >> $tmp3
+		echo "Content-Type: text/html" >> $tmp3
+		echo "MIME-Version: 1.0" >> $tmp3
+		echo "" >> $tmp3
+		echo "<pre><font size=\"2\"><tt><font face=\"Courier New, Courier, mono\">" >> $tmp3
+		let first=1
+		INFO=""
+		if test `echo $2 | grep -c ^ESX` -gt 0; then
+			INFO=/usr/local/bin/hostinfo
+		elif test `echo $2 | grep -c ^DATASTORE` -gt 0; then
+			INFO=~esxadmin/bin/dsinfo
+		fi
+		if test -n "$INFO"; then
+			while read name
+			do
+				test $verbose -gt 1 && echo "[`date`] getting info for: $name"
+				if test $first -eq 1; then
+					$INFO "$name" >> $tmp3
+					first=0
+				else
+					$INFO -n "$name" >> $tmp3
+				fi
+			done < $tmp2
+		else
+			cat $tmp2 >> $tmp3
+		fi
+		echo "</font></tt></pre>" >> $tmp3
+		cat $tmp3 | /usr/sbin/sendmail $TO
+	fi
+	if test -n "$SMS"; then
+		echo "From: $FROM" > $tmp3
+		echo "$2:" >> $tmp3
+		while read name
+		do
+			echo "$name" >> $tmp3
+		done < $tmp2
+		cat $tmp3 | /usr/sbin/sendmail $SMS
+	fi
+}
+
+#
+### Report servers back up
+#
+
+up() {
+	rm -f $tmp2; touch $tmp2
+	touch $tmp1
+	while read line
+	do
+#		echo "line: $line"
+		name=`echo "$line" | awk -F, '{ print $1 }'`
+		test `cat $tmp1 | grep -c "^$name"` -gt 0 && continue
+		count=`echo "$line" | awk -F, '{ print $2 }'`
+#		echo "count: $count"
+		test -z "$count" && count=0
+		# If it was "seen again" the last interval, go ahead and remove
+		if test $count -lt 0; then
+			echo "[`date`] Removing $1: $name" >> $log
+			cat $reported | grep -v "^$name" > "$reported".new
+			mv "$reported".new $reported
+			# if it was alerted, remove from alert list and notify
+			if test `cat $alerted | grep -c "^$name$"` -gt 0; then
+				echo $name >> $tmp2
+				cat $alerted | grep -v "^$name$" > "$alerted".new
+				mv "$alerted".new $alerted
+			fi
+		else
+			# Mark as "seen again"
+			sed -i -e "s:^$name,$count:$name,-1:" $reported
+		fi
+	done < $reported
+	test `cat $tmp2 | wc -l` -gt 0 && notify 0 "$1 SERVER BACK UP"
+}
+
+#
+### Report down servers
+#
+
+down() {
+	rm -f $tmp2; touch $tmp2
+	while read name
+	do
+#		echo "name: $name"
+#		# Make sure it's a valid hostname
+#		h=`host $name 2>&1`
+#		test `echo "$h" | grep -c "not found"` -gt 0 && continue
+#		# Automatically ignore lab servers
+#		test `echo $name | grep -c 'lab'` -gt 0 && continue
+		# If ignoring, skip
+		test `cat $ignore | grep -c "^$name"` -gt 0 && continue
+		# Check if in MM if an ESX host
+		if test `echo $1 | grep -c ESX` -gt 0; then
+			# If in mm, skip
+			ismm=`/usr/local/bin/mm -c "$name"`
+#			echo "ismm: $ismm"
+			test "$ismm" = "true" && continue
+		fi
+		# If reported NUM_TIMES, send email/ticket/scream
+		line=`cat $reported | grep "^$name," | head -1`
+		if test -n "$line"; then
+			count=`echo "$line" | awk -F, '{ print $2 }'`
+#			echo "count: $count"
+			# If it came back, but is gone again, dont report
+			if test $count -lt 0; then
+				let new_count=$NUM_TIMES+1
+			else
+				let new_count=$count+1
+				if test $new_count -eq $NUM_TIMES; then
+					echo "[`date`] Alerting $1: $name" >> $log
+					echo $name >> $tmp2
+					echo $name >> $alerted
+				fi
+			fi
+			sed -i -e "s:^$name,$count:$name,$new_count:" $reported
+		else
+			echo "[`date`] Adding $1: $name" >> $log
+			echo $name,1 >> $reported
+		fi
+	done < $tmp1
+	test `cat $tmp2 | wc -l` -gt 0 && notify $CREATE_TICKET "$1 SERVER DOWN"
+}
+
+#
+### Check for reboot
+#
+
+reboot() {
+	rm -f $tmp2; touch $tmp2
+	while read n status boot
+	do
+		name=`echo $n | sed "s+:++"`
+#		echo "n: $n, name: $name, boot: $boot"
+		if test -z "$boot"; then
+			echo "[`date`] $name: boot is empty! (status: $status)" >> $rebootlog
+			continue
+		fi
+		bt=`cat $boottimes | grep ^$name | awk '{ print $2 }'`
+		if test -z "$bt"; then
+			echo "[`date`] $name: bt is empty! boot: $boot" >> $rebootlog
+			echo "$name $boot" >> $boottimes
+			continue
+		fi
+		if test "$boot" != "$bt"; then
+			echo "[`date`] n: $n, name: $name, boot: $boot, bt: $bt" >> $rebootlog
+			sed -i -e "s+^$name $bt+$name $boot+" $boottimes
+			# If ignoring, skip
+			test `cat $ignore | grep -c "^$name"` -gt 0 && continue
+			# If reported, skip
+#			test `cat $reported | grep -c "^$name,"` -gt 0 && continue
+			# Check if in MM if an ESX host
+			if test `echo $1 | grep -c ESX` -gt 0; then
+				ismm=`/usr/local/bin/mm -c "$name"`
+				echo "ismm: $ismm" >> $rebootlog
+				if test "$ismm" != "true"; then
+					echo "$name" >> $tmp2
+					echo "[`date`] Alerting Reboot $1: $name" >> $log
+				fi
+			fi
+		fi
+	done < $tmp1
+	test `cat $tmp2 | wc -l` -gt 0 && notify $CREATE_TICKET "$1 SERVER REBOOTED"
+}
+
+#
+### VC servers
+#
+
+if test $MONITOR_VC -eq 1; then
+reported=$HOME/etc/"$me"_vc_reported
+test -f $reported || touch $reported
+alerted=$HOME/etc/"$me"_vc_alerted
+test -f $alerted || touch $alerted
+boottimes=$HOME/etc/"$me"_vc_boottimes
+test -f $boottimes || touch $boottimes
+
+cat ~/etc/vcservers | grep -v '^#'  | awk -F, '{ print $4 }' | sort -u > $tmp0
+rm -f $tmp1; touch $tmp1
+while read name
+do
+	/usr/local/bin/esxconf -a -s $name > /dev/null 2>&1
+	test $? -ne 0 && echo $name >> $tmp1
+done < $tmp0
+
+up VC
+down VC
+fi
+
+#
+### ESX servers
+#
+
+if test $MONITOR_HOSTS -eq 1; then
+reported=$HOME/etc/"$me"_esx_reported
+test -f $reported || touch $reported
+alerted=$HOME/etc/"$me"_esx_alerted
+test -f $alerted || touch $alerted
+boottimes=$HOME/etc/"$me"_esx_boottimes
+test -f $boottimes || touch $boottimes
+
+timestamp=`date "+%Y%m%d%H%M%S"`
+tmpdir=/dev/shm/$timestamp
+rm -rf $tmpdir; mkdir -p $tmpdir
+/usr/local/bin/worker $servers $THREADS $getinfo $timestamp
+cat $tmpdir/* > $tmp0
+if test $ARCHIVE -eq 1; then
+	mkdir -p $HOME/archive/esxmon
+	(cd $tmpdir/..; tar -zcf $HOME/archive/esxmon/$timestamp.tgz $timestamp)
+fi
+rm -rf $tmpdir
+cat $tmp0 | grep -i connect | awk -F: '{ print $1 }' | sort > $tmp1
+
+up ESX
+down ESX
+cat $tmp0 | grep ": OK " > $tmp1
+reboot ESX
+fi
+
+#
+### Datastores
+#
+
+if test $MONITOR_DS -eq 1; then
+alerted=$HOME/etc/"$me"_ds_alerted
+test -f $alerted || touch $alerted
+dsignore=$HOME/etc/"$me"_ds_ignore
+test -f $dsignore || touch $dsignore
+
+# Gather list
+mysql -N -B -e "select distinct CONCAT_WS(',',datastore,datastore_id,total,free,round(((free/total)*100),0)) from host_datastore_vw where total > 0" > $tmp0
+FORMAT="%-20.20s  %-35.35s %-20.20s %10.10s  %10.10s\n"
+IFS=","
+rm -f $tmp1; touch $tmp1
+while read name dsid total free pct
+do
+	test `cat $dsignore | grep -c "^$name$"` -gt 0 && continue
+	if test $pct -lt $DS_THRESHOLD_PCT; then
+		echo "$name" >> $tmp1
+	fi
+done < $tmp0
+#rm -f $tmp1; touch $tmp1
+
+# Alert full
+rm -f $tmp2; touch $tmp2
+while read name
+do
+	if test `cat $alerted | grep -c "^$name$"` -eq 0; then
+		echo "[`date`] Alerting datastore full: $name" >> $log
+		echo "$name" >> $tmp2
+		echo "$name" >> $alerted
+	fi
+done < $tmp1
+test `cat $tmp2 | wc -l` -gt 0 && notify $CREATE_TICKET "DATASTORE(S) FULL"
+
+# Report clear
+rm -f $tmp2; touch $tmp2
+while read name
+do
+	if test `cat $tmp1 | grep -c "^$name$"` -eq 0; then
+		echo "[`date`] Removing datastore: $name" >> $log
+		echo "$name" >> $tmp2
+		cat $alerted | grep -v "^$name$" > "$alerted".new
+		mv "$alerted".new $alerted
+	fi
+done < $alerted
+test `cat $tmp2 | wc -l` -gt 0 && notify 0 "DATASTORE(S) CLEAR"
+fi

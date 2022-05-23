@@ -1,0 +1,8 @@
+#!/bin/bash
+
+#VC="txhous1vsphere1.uson.usoncology.int"
+VC="usodpwvvc001.uson.usoncology.int"
+#OPTS="--verbose"
+
+./mkxml | tee create_vm.xml
+/usr/lib/vmware-vcli/apps/vm/vmcreate.pl $OPTS --url https://$VC:443/sdk/webService --username 'USON\svcvsphere' --password 'svcvsphere*!' --filename create_vm.xml --schema /usr/lib/vmware-vcli/apps/schema/vmcreate.xsd

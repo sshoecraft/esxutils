@@ -1,0 +1,7 @@
+DROP TABLE IF EXISTS vm_hist;
+CREATE TABLE vm_hist (
+	time		TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	vm_name		VARCHAR(64),
+	host_from	VARCHAR(64),
+	host_to		VARCHAR(64)
+) ENGINE = InnoDB;

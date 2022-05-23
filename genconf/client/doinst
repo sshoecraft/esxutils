@@ -1,0 +1,20 @@
+#!/bin/bash
+
+FILES="buildupd genconf"
+
+found=0
+for d in /srv/www/cgi-bin /var/www/cgi-bin
+do
+	test -d $d || continue
+	cd $d || exit 1
+	found=1
+	break
+done
+if test $found -eq 0; then
+	echo "error: no /var/www/cgi-bin or /srv/www/cgi-bin on $(hostname)!"
+	exit 1
+fi
+for f in $FILES 
+do
+	mv /tmp/$f . && chown root:root $f && chmod 0755 $f
+done
