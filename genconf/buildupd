@@ -2,7 +2,7 @@
 use CGI;
 use Switch;
 
-my $FROM = "Builder <builder\@usoncology.com>";
+my $FROM = "Builder <builder\@localdomain.net>";
 my $TO="root\@mail.com";
 
 my $debug = 0;

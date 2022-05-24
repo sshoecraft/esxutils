@@ -123,18 +123,8 @@ static int callsub(struct esxpost *info) {
 
 	fclose(fp);
 #else
-//	GTC: 10.128.0.0 /16 & 10.129.0.0 /16 (caveat: 10.129.8.x and 10.129.9.x lives in DDC for jcaps environment).
-//	DDC: 10.5.192.0 /18 & 10.9.0.0 /18
 	char temp[32],*gw,*p;
-	if (strncmp(info->addr,"10.128",6) == 0 || strncmp(info->addr,"10.129",6) == 0) {
-		if (strncmp(info->addr,"10.128",6) == 0 || strncmp(info->addr,"10.129",6) == 0) {
-			gw = ".254";
-		} else {
-			gw = ".1";
-		}
-	} else {
-		gw = ".254";
-	}
+	gw = ".1";
 	strcpy(temp,info->addr);
 	dprintf("temp: %s\n", temp);
 	p = strrchr(temp,'.');

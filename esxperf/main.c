@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
 			break;
 		case 'V':
 			printf("esxpost version %s\n", VERSIONSTR);
-			printf("by Steve Shoecratft (sshoecraft@hp.com)\n");
+			printf("by Steve Shoecratft (sshoecraft@earthlink.net)\n");
 			return 0;
                         break;
 		}

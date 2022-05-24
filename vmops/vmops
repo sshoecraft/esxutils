@@ -54,9 +54,6 @@ if ($ARGV[0]) {
 	print $q->header();
 }
 
-#$hostname = "rh5-64.uson.usoncology.int"; $action="tools"; $args = "";
-#$hostname = "usodplvaf001.uprd.usoncology.unx"; $action="unmount"; $args = "";
-
 dprintf(1,"hostname: %s, action: %s, args: %s\n", $hostname, $action, $args);
 system("echo [`date +%Y%m%d%H%M`] '\$hostname=\"$hostname\";\$action=\"$action\";\$args=\"$args\";' >> $log 2>/dev/null");
 
@@ -284,7 +281,7 @@ sub do_unmount {
 	dprintf(1,"do_unmount; notify: %d\n", $notify);
 	if ($notify) {
 		open(my $fh,">",$tmp);
-		printf($fh "From: SysAdmin <sysadm\@usoncology.com>\n");
+		printf($fh "From: SysAdmin <sysadm\@localdomain.net>\n");
 		printf($fh "Subject: Build complete for linux VM %s\n", $vm->name);
 		printf($fh "\n");
 		system("cat $tmp | /usr/sbin/sendmail $sendto");

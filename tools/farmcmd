@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use DBI;
 
-my $ESXADMIN_SERVER = "itxadmin.hp.com";
+my $ESXADMIN_SERVER = "server.localdomain.net";
 
 my $dbh = DBI->connect("DBI:mysql:esxadmin:$ESXADMIN_SERVER",'esx_ro') or die "Couldn't connect to database: " . DBI->errstr;
 my $farms = $dbh->prepare("SELECT id FROM farms WHERE name like ?");

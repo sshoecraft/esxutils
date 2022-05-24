@@ -74,8 +74,6 @@ $model = "unknown" unless($model);
 my $client_args = $q->param('args');
 $client_args = "" unless($client_args);
 
-#$hostname="usodplpvm119.uprd.usoncology.unx";$ip="10.5.200.119";$os="ESXi";$version="6.7.0";$build="14320388";$model="ProLiant BL460c Gen9";
-$hostname="ddc1-pod2esx126.dm.mckesson.com";$ip="10.16.128.120";$os="ESXi";$version="6.5.0";$build="15256549";$model="PowerEdge R630";
 if ($hostname eq "unknown") {
 	printf("error: hostname not specified!\n");
 	exit 1;
@@ -125,17 +123,11 @@ dprintf(1,"bindir: %s, statedir: %s, logdir: %s\n", $bindir, $statedir, $logdir)
 my $doip="-i \"$ip\"" if (length($ip) > 1);
 $doip = "" unless($doip);
 my $info;
-if (1 == 1) {
-	$cmd = "/usr/local/sbin/esxpost -v $version -g $hostname $doip 2>/dev/null";
-	dprintf(1,"cmd: %s\n", $cmd);
-	$info = qx{$cmd};
-#	$info = read_file("/tmp/esxpost.$$");
-#	$info = `cat /tmp/esxpost.$$`;
-	chomp($info);
-	$info = "" unless($info);
-} else {
-	$info = "INFO: usodplvvc001.uprd.usoncology.unx,DDC,DDC-SERVERS,XM22N-6YZDL-N8R80-0GX06-1M821,10.5.200.119,10.5.200.0,10.5.200.254,NG1"
-}
+$cmd = "/usr/local/sbin/esxpost -v $version -g $hostname $doip 2>/dev/null";
+dprintf(1,"cmd: %s\n", $cmd);
+$info = qx{$cmd};
+chomp($info);
+$info = "" unless($info);
 dprintf(1,"info: %s\n", $info);
 $info = "" if ($info =~ /not found/);
 if ($info =~ m/^INFO: /) {

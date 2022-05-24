@@ -1,8 +1,0 @@
-make
-rm -f *.log
-#set args -s westvc.houston.hp.com -u americas\\\\shoecraf d9t0068h.houston.hp.com
-gdb ./mm << EOF
-set args -s westvc.houston.hp.com -u americas\\\\shoecraf -c d9t0002h.houston.hp.com
-run
-bt
-EOF

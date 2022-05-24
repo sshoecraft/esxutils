@@ -15,7 +15,7 @@ Util::connect();
 
 #my $url = "http://$server/sdk";
 
-Util::connect('https://usodplvvc001.uson.usoncology.int/sdk', 'USON\svcvsphere', 'svcvsphere*!');
+Util::connect('https://vcserver/sdk', 'vcuser', 'vcpass');
 
 #my ($url, $username, $password) = @_;
 #my ($url, $username, $password) = @_;
