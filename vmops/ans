@@ -9,7 +9,7 @@ use VMware::VIRuntime;
 use Data::Dumper;
 
 my $username = 'root';
-my $password = 'k1n0bi!';
+my $password = 'XXXXXX';
 my $log = "/var/tmp/vmops.log";
 
 # Version 1.3

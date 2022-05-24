@@ -3,7 +3,7 @@ use CGI;
 use Switch;
 
 my $FROM = "Builder <builder\@usoncology.com>";
-my $TO="stephen.shoecraft\@mckesson.com MSHWindowsServerTeam\@usoncology.com";
+my $TO="root\@mail.com";
 
 my $debug = 0;
 sub dprintf { my $level = shift; if ($debug >= $level) { print "#"; printf(@_) } }

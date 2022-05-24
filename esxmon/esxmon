@@ -1,9 +1,9 @@
 #!/bin/bash
 
-FROM="ESXAdmin <esxadmin@usoncology.com>"
-TO="stephen.shoecraft@mckesson.com MSHWindowsServerTeam@usoncology.com"
-SMS="8323684699@messaging.sprintpcs.com 9165056202@txt.att.net 8323722455@messaging.sprintpcs.com 6027337225@messaging.sprintpcs.com"
-ME="stephen.shoecraft@mckesson.com"
+FROM="ESXAdmin <esxadmin@localdomain.net>"
+TO="root@mail.com"
+SMS="number@messaging.sprintpcs.com number2@txt.att.net"
+ME="dev@mail.com"
 
 let verbose=1
 let debug_level=0

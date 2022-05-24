@@ -11,8 +11,8 @@ use Data::Dumper;
 use threads;
 
 my $username = 'root';
-my $password = 'k1n0bi!';
-my $sendto = 'stephen.shoecraft@mckesson.com MSHPlatformOperations@usoncology.com';
+my $password = 'XXXXXX';
+my $sendto = 'root@mail.com';
 my $tmp = tmpnam("vmopsXXXXX");
 my $log = "/var/tmp/vmops.log";
 

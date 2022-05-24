@@ -4,7 +4,7 @@ BINDIR=~/bin
 DO_LOG=0
 LOGDIR=~/logs/esxmon
 DO_MAIL=0
-SENDTO="stephen.shoecraft@hp.com"
+SENDTO="root@mail.com"
 #
 umask 022
 

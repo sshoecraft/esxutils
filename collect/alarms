@@ -17,7 +17,7 @@ my $debug = 0;
 sub dprintf { my $level = shift; printf(@_) if ($debug >= $level); }
 my $home = $ENV{ HOME };
 
-my $SENDTO = "stephen.shoecraft\@mckesson.com";
+my $SENDTO = "root\@mail.com";
 #printf("sendto: %s\n", $SENDTO);
 #exit 0;
 

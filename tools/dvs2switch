@@ -7,9 +7,9 @@ use utils;
 
 $debug = 9;
 
-my $host = "usonplpvm008";
+my $host = "192.168.1.99";
 my $user = "root";
-my $pass = "k1n0bi!";
+my $pass = "XXXXXX";
 
 #collect port group info
 sub collect { 
