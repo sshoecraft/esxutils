@@ -383,7 +383,6 @@ static int get_vm_metrics(struct csession *s, struct vm *vm) {
 	struct ManagedObjectReference *mo_ref;
 	int i, count, cpu, ready, mem, disk, net;
 
-//	if (strcmp(vm->name,"g2t0979g") != 0) return 0;
 	beginTime = 0;
 	sprintf(query,"SELECT MAX(time) FROM vm_perf WHERE vm_id = %d",vm->id);
 	if (db_exec(s->db,query) == 0) {

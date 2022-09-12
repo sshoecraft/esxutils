@@ -31,10 +31,3 @@ clean:
 
 cleanall: clean
 	@rm -f *.log
-
-ifeq ($(OS),linux)
-SERVER=g5t1155
-#SERVER=g6w2194c
-test: $(PROG)
-	./$(PROG) $(SERVER)
-endif

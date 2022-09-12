@@ -1,5 +1,0 @@
-my $cmd = "/usr/bin/curl -s -S -N --user 'americas\\\$itxops:\@pswar3Sucks' --insecure \"https://g9w0317g.americas.hpqcorp.net//serverbuildws/server.asmx/$action?ServerName=$host&User=AMERICAS\\\\\\\$itxops&Password=\@pswar3Sucks$parms\"";
-dprintf(1,"cmd: %s\n", $cmd);
-system($cmd);
-exit 0;
-

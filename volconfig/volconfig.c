@@ -201,7 +201,7 @@ int main(int argc, char **argv) {
 	char query[128], *host, *text;
 	char line[1024], *p;
 	DB db;
-	int r,found,i;
+	int found,i;
 	struct volconfig config;
 	struct driveinfo *drive;
 	struct vginfo *vg;
@@ -232,7 +232,6 @@ int main(int argc, char **argv) {
 		perror("malloc");
 		return 1;
 	}
-	r = 0;
 
 	if (db_connect(&db,DB_NAME,DB_USER,DB_PASS)) {
 		printf("error: unable to connect to db!\n");

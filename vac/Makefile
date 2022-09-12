@@ -10,8 +10,6 @@ PROG=$(NAME)$(EXE)
 SRCS=$(NAME).c
 OBJS=$(SRCS:.c=.o)
 
-SERVER=g3t0001h
-
 all: $(PROG)
 
 $(OBJS): Makefile

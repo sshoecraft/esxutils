@@ -10,7 +10,7 @@ ETCDIR=/home/esxadmin/etc
 
 NAME=esxpost
 PROG=$(NAME)$(EXE)
-SRCS=main.c info.c post.c gendb_hosts.c gendb_farms.c utils.c exec.c clear.c conx.c
+SRCS=main.c info.c post.c gendb_hosts.c gendb_farms.c utils.c clear.c conx.c
 OBJS=$(SRCS:.c=.o)
 CFLAGS+=-DETCDIR=\"$(ETCDIR)\"
 GENDB=gendb -s esxadmin -u esxadmin_ro
