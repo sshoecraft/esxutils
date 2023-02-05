@@ -10,7 +10,7 @@
 
 #define DB_NAME "mbs"
 #define DB_USER "mbs_ro"
-#define DB_PASS "mbs2011readonly**"
+#define DB_PASS "unknown**"
 
 #define BUFFER_SIZE 4*1048576
 

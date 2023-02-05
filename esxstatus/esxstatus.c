@@ -10,14 +10,6 @@
 #include <signal.h>
 #endif
 
-#if 0
-#define USER "sitescope"
-#define PASS "need2know"
-#else
-#define USER "root"
-#define PASS "k1n0bi!"
-#endif
-
 char server[64];
 int state;
 #ifndef __WIN32
