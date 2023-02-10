@@ -1,6 +1,0 @@
-use POSIX;
-my $v = 36;
-my $x = fmod($v,32);
-printf("x: %s\n", $x);
-my $n=floor($x);
-printf("n: %s\n", $n);

@@ -1,9 +1,0 @@
-wb 2 4 25 rhel5_64Guest uat-fms-wfs01
-wb 2 4 25 rhel5_64Guest uat-cur-web01
-wb 2 4 25 rhel5_64Guest uat-cur-web02
-wb 2 4 25 rhel5_64Guest uat-cur-app01
-wb 2 4 25 rhel5_64Guest uat-cur-app02
-dm 4 12 35 rhel5_64Guest uat-cur-db01
-dm 4 12 64 rhel5_64Guest uat-cur-db02
-wb 4 8 50 rhel6_64Guest uat-uos-web11
-wb 4 8 50 rhel6_64Guest uat-uos-web12

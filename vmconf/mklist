@@ -1,1 +1,0 @@
-mysql -N -B -e "SELECT ci_name FROM vms WHERE (ci_name regexp '^[d|g][0-9]t' or ci_name regexp '^s[0-9][0-9]t') AND tools != 'Ok'"

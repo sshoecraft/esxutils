@@ -198,12 +198,6 @@ static int get_vm_info(struct csession *s, struct vm *vm, struct returnval *ret)
 		while((set2 = list_get_next(set->nodes)) != 0) {
 			dprintf("set2->name: %s\n", set2->name);
 			if (strcmp(set2->name,"VirtualMachineFileLayoutExFileInfo") != 0) continue;
-#if 0
-layoutEx.file18.key 17
-layoutEx.file18.name [DDC-UAT-SAN5] usoddwvwb006/vmware.log
-layoutEx.file18.type log
-layoutEx.file18.size 65536
-#endif
 				struct vim_res2desc vm_desc[] = {
 				{ "name", VIM_TYPE_STRING, new_file.name, sizeof(new_file.name), 0, 1 },
 				{ "type", VIM_TYPE_STRING, new_file.type, sizeof(new_file.type), 0, 1 },
@@ -383,6 +377,7 @@ static int get_vm_metrics(struct csession *s, struct vm *vm) {
 	struct ManagedObjectReference *mo_ref;
 	int i, count, cpu, ready, mem, disk, net;
 
+//	if (strcmp(vm->name,"g2t0979g") != 0) return 0;
 	beginTime = 0;
 	sprintf(query,"SELECT MAX(time) FROM vm_perf WHERE vm_id = %d",vm->id);
 	if (db_exec(s->db,query) == 0) {

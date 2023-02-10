@@ -2,7 +2,7 @@ passwd -d root
 sed -i -e 's|root::|root:$1$LcwsKB7n$PtQn54jUyo90oxvOarvRT0:|' /etc/shadow
 log=/tmp/post.log
 way=`cat /etc/vmware/weasel/replay 2>/dev/null | grep ^waystation= | awk -F= '{ print $2 }'`
-test -z "$way" && way="192.168.1.2"
+test -z "$way" && way="<XXX enter default waystation IP here>"
 echo "way: $way" > $log
 logit() {
   echo "status: $1, message: $2" >> $log
@@ -41,7 +41,7 @@ logit Info "Post complete"
 exit 0
 #############################################################################################
 %firstboot --level 50
-default_waystation=192.168.1.2
+default_waystation=<default waystation IP>
 cat > /scratch/final << __END_FINAL
 hn=$(hostname)
 sn=$(hostname -s)

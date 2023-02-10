@@ -170,6 +170,8 @@ int vim_isconnected(struct vim_session *vim, struct ManagedObjectReference *mo_r
 int vim_getperfmetrics(struct vim_session *s, struct ManagedObjectReference *mor, char *startTime, struct vim_perfmetric *,int);
 //int vim_checkperfsupport(struct vim_session *s, struct ManagedObjectReference *mor);
 int vim_destroy(struct vim_session *s, struct ManagedObjectReference *mor);
+int vim_poweroff(struct vim_session *s, struct ManagedObjectReference *mor);
+int vim_rename(struct vim_session *s, struct ManagedObjectReference *mo_ref, char *newname);
 int vim_getallperfmetrics(struct vim_session *s);
 char **build_paths(struct vim_res2desc *desc);
 int get_vcserver(char *version, char *cluster, char *host, char *server, int port, char *user);

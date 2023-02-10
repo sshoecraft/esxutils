@@ -1,4 +1,5 @@
 #!/bin/bash 
+# hosts: g5t1963h / 0e:11, g2t0177h / 0E:58
 usage() {
 	echo "usage: whordm <host> <cu:ldev>"
 	exit 1

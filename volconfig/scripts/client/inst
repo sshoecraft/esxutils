@@ -1,9 +1,0 @@
-#!/bin/bash
-test -z "$1" && exit 1
-
-eval `cat doinst | grep ^FILES=`
-
-echo "installing to: $1..."
-/usr/local/bin/timeout 60 /usr/local/lib/tools/admscp $FILES doinst $1:/tmp
-test $? -ne 0 && exit 1
-/usr/local/bin/timeout 60 /usr/local/lib/tools/admssh $1 "/usr/bin/sudo su - root -c \"cd /tmp && sh doinst; rm -f doinst\""

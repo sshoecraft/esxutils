@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 use CGI;
 
-my $SERVER = "tools.localdomain.net";
+my $SERVER = "esxutils";
 
 my $debug = 0;
 sub dprintf { my $level = shift; printf(@_) if ($debug >= $level); }

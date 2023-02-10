@@ -37,7 +37,7 @@ endif
 	sudo install -m 755 -o root -g root $(PROG) /var/www/html/tools/$(NAME)_$(ARCH)$(EXE)
 
 clean:
-	@rm -f $(PROG) $(OBJS)
+	@rm -f $(PROG) $(OBJS) gendb_*
 
-clean cleanall:
+cleanall:
 	@rm -f *.log

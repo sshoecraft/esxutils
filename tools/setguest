@@ -11,17 +11,15 @@ use utils;
 $debug = 0;
 
 my $name = $ARGV[0];
-#$name = "c7-64";
 exit 0 unless($name);
 dprintf(0,"VM name: %s\n", $name);
 
 my $guestId = $ARGV[1];
-#$guestId = "c7-64";
 exit 0 unless($guestId);
 dprintf(0,"guestId: %s\n", $guestId);
 
 my $server = $ARGV[2];
-$server = 'usodplvvc001' unless($server);
+$server = 'vcserver' unless($server);
 dprintf(3,"server: %s\n", $server);
 
 my ($dnsname,$aliases,$addrtype,$length,@addrs) = gethostbyname($server);

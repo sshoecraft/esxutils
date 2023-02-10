@@ -13,9 +13,9 @@ Opts::parse();
 Opts::validate();
 Util::connect();
 
-#my $url = "http://$server/sdk";
+my $url = "https://$server/sdk";
 
-Util::connect('https://vcserver/sdk', 'vcuser', 'vcpass');
+Util::connect(url, 'user', 'pass');
 
 #my ($url, $username, $password) = @_;
 #my ($url, $username, $password) = @_;

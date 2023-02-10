@@ -31,11 +31,7 @@ ifeq ($(OS),win)
     #CFLAGS+=-DWIN32_LEAN_AND_MEAN
   endif
   PREFIX=$(BASE)/$(VERS)
-  ifeq ($(DEBUG),yes)
-    EXE=_debug.exe
-  else
-    EXE=_debug.exe
-  endif
+  EXE=.exe
 else
   ifeq ($(OS),linux)
 	MACH := $(shell uname -m)
@@ -69,9 +65,6 @@ else
   else
 	error: unknown os
   endif
-  ifeq ($(DEBUG),yes)
-    EXE=_debug
-  endif
 endif
 ARCH=$(OS)$(BITS)
 CFLAGS+=-Wall
@@ -81,7 +74,6 @@ SRC_ROOT ?= ..
 # Debugging?
 ifeq ($(DEBUG),yes)
 CFLAGS+=-DDEBUG -g
-DEBUG_SUFFIX=_debug
 else
 CFLAGS+=-O2 -pipe
 endif

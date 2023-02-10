@@ -53,7 +53,7 @@ again:
 }
 
 static int callsub(struct esxpost *info) {
-#if 0
+#if 1
 	char line[128],tmpfile[128];
 	int status,lines,have_site;
 	FILE *fp;
@@ -124,7 +124,7 @@ static int callsub(struct esxpost *info) {
 	fclose(fp);
 #else
 	char temp[32],*gw,*p;
-	gw = ".1";
+	gw = ".254";
 	strcpy(temp,info->addr);
 	dprintf("temp: %s\n", temp);
 	p = strrchr(temp,'.');

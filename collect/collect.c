@@ -6,8 +6,8 @@
 #include <time.h>
 
 #define DB_NAME "esxadmin"
-#define DB_USER "esxadmin"
-#define DB_PASS "G3tB3nt"
+#define DB_USER "esxadmin_ro"
+#define DB_PASS "esxadmin_ro"
 
 #define CIDB_NAME "sysdb"
 #define CIDB_USER "sysdb_ro"

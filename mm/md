@@ -1,9 +1,0 @@
-FLAGS="OS=win BITS=32"
-for d in ../util ../soap ../vim ../db ../esxpost
-do
-	cd $d || exit 1
-	make $FLAGS clean
-	make $FLAGS DEBUG=yes
-done
-make $FLAGS clean
-make $FLAGS DEBUG=yes

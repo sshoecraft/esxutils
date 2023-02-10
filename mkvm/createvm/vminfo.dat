@@ -1,6 +1,0 @@
-#Name,Host,Datacenter,Guest-Id,Disksize,Memory,Numcpu,Network
-usodtlvaf001,usogpvpesx01,GTC,rhel6_64Guest,50,8,4,dvPortGroup_107.x
-usodtlvaf002,usogpvpesx01,GTC,rhel6_64Guest,50,8,4,dvPortGroup_107.x
-usodtlvaf003,usogpvpesx01,GTC,rhel6_64Guest,30,8,4,dvPortGroup_107.x
-usodtlvaf004,usogpvpesx01,GTC,rhel6_64Guest,80,8,4,dvPortGroup_107.x
-usodtlvaf005,usogpvpesx01,GTC,rhel6_64Guest,80,8,4,dvPortGroup_107.x

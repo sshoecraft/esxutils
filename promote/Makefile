@@ -12,18 +12,18 @@ endif
 
 include ../Makefile.inc
 
-NAME=esxconf
+NAME=promote
 PROG=$(NAME)$(EXE)
 SRCS=$(NAME).c
 OBJS=$(SRCS:.c=.o)
 
 all: $(PROG)
+#	./$(PROG) -s g3t0001h -x -z config.product
 
-#$(OBJS): lib/vim.h
 $(OBJS): Makefile
 
 $(PROG): $(OBJS) $(DEPS)
-	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) $(LIBS) -lpthread
 
 install: $(PROG)
 ifeq ($(OS),linux)

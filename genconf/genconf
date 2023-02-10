@@ -128,8 +128,8 @@ dprintf(1,"cmd: %s\n", $cmd);
 $info = qx{$cmd};
 chomp($info);
 $info = "" unless($info);
-dprintf(1,"info: %s\n", $info);
 $info = "" if ($info =~ /not found/);
+dprintf(1,"info: %s\n", $info);
 if ($info =~ m/^INFO: /) {
 	$info =~ s/^INFO: //;
 	dprintf(1,"NEW info: %s\n", $info);
@@ -192,6 +192,7 @@ if (-e "$LIBDIR/$hostconf") {
 		$have_match = 1 if ($str =~ m/(BL|DL|RX|SD)/i);
 		$modstr .= $str if ($have_match);
 	}
+	dprintf(1,"have_match: %s\n", $have_match);
 	if (!$have_match) {
 		my $count = @tmp;
 		my $half = (sprintf "%.0f", $count/2)-1; 
@@ -213,6 +214,7 @@ if (-e "$LIBDIR/$hostconf") {
 }
 #exit 0;
 
+dprintf(1,"filename: %s\n", $filename);
 if ( -z "$filename") {
 	# XXX should we load a "default" config @ this point?
 	printf("error: unable to determine config filename!\n");
@@ -259,6 +261,20 @@ while(my $buf = <IN>) {
 }
 close(IN);
 dprintf(1,"waystation: %s, ip: %s\n", $waystation, $way_ip);
+if (!length($waystation)) {
+	open(IN,"/usr/local/etc/defway");
+	my $defway;
+	while(my $buf = <IN>) {
+		next if ($buf =~ /^#/);
+		chomp($buf);
+		next unless ($buf);
+		$defway=$buf;
+		last;
+	}
+	close(IN);
+	dprintf(1,"defway: %s\n",$defway);
+	$waystation=$defway;
+}
 #exit(0);
 
 # Get name subkey from array
@@ -371,6 +387,7 @@ if ( -f "$infile" ) {
 	my @forced = [ 'include','dns','domain','ntp','vswitch','portgroup','interface','option','nas','iscsi' ];
 	dprintf(1,"config file: %s\n",$infile);
 	$config = XMLin($infile, KeyAttr => [ ], forcearray => @forced);
+	dprintf(1,"include: %s\n", $config->{include});
 	if ($config->{include}) {
 		for my $incs ($config->{include}) {
 			dprintf(1,"incs: %s\n", ref $incs);
@@ -382,6 +399,7 @@ if ( -f "$infile" ) {
 			}
 		}
 	}
+	dprintf(1,"noall: %s\n", $config->{noall});
 	if (!$config->{noall}) {
 		dprintf(1,"loading all.xml\n");
 		my $all_file = "$LIBDIR/all.xml";
@@ -1065,7 +1083,8 @@ foreach(@sections) {
 		my $state = $states{$fname};
 		printf("$_)\n");
 		printf("\techo $state > \$state_file\n");
-		printf("\tdoit $_\n");
+		printf("\tway=\$2\n");
+		printf("\tdoit $_ \$2\n");
 		printf("\t;;\n");
 	}
 }
@@ -1157,7 +1176,9 @@ sub do_zeroconf {
 
 sub do_histstats {
 	begin_step("Enabling historical statistics collection");
-	emit(0,"sed -i -e 's:<historicalStatsEnabled> false </historicalStatsEnabled>:<historicalStatsEnabled> true </historicalStatsEnabled>:'  /etc/vmware/hostd/config.xml");
+	if ($version_val < verval('7.0.0')) {
+		emit(0,"sed -i -e 's:<historicalStatsEnabled> false </historicalStatsEnabled>:<historicalStatsEnabled> true </historicalStatsEnabled>:'  /etc/vmware/hostd/config.xml");
+	}
 	end_step;
 }
 
@@ -1480,8 +1501,8 @@ sub do_setway {
 	end_state(1) if ($in_state);
 	begin_state;
 	$states{do_setway} = $state;
-	begin_step("Setting waypoint to $waystation");
-	emit(0,"sed -i -e '/^waystation=/cwaystation=$waystation' \$replay");
+	begin_step("Setting waypoint to \$2");
+	emit(0,"sed -i -e \"/^waystation=/cwaystation=\$2\" \$replay");
 	emit(0,"test \"\$1\" = \"setway\" && break\n");
 	end_state(1);
 }

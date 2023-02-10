@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use DBI;
 
-my $server = "tools.localdomain.net";
+my $server = "esxutilshost";
 my $debug = 3;
 my $max = 0;
 my $count = 0;

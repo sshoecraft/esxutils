@@ -10,6 +10,9 @@
 #include <signal.h>
 #endif
 
+#define USER "root"
+#define PASS "rootpass"
+
 char server[64];
 int state;
 #ifndef __WIN32

@@ -18,7 +18,7 @@ SRCS=$(NAME).c
 OBJS=$(SRCS:.c=.o)
 
 all: $(PROG)
-#	./$(PROG) -s server -x -z config.product
+#	./$(PROG) -s g3t0001h -x -z config.product
 
 $(OBJS): Makefile
 

@@ -16,6 +16,7 @@ OBJS=$(SRCS:.c=.o)
 
 all: $(PROG)
 #	./$(PROG) -a -s try -u this -p one
+#	./vim_cred -e -s g1t0698h -u root
 
 $(PROG): $(OBJS) $(DEPS)
 	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) $(LIBS) 

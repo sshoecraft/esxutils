@@ -430,8 +430,8 @@ int main(int argc, char **argv) {
 			exit(1);
 		}
 	}
-	printf("*server: %d, user: %p\n", *server, user);
-	if (!server[0]) strcpy(server, "localhost");
+//	printf("*server: %d, user: %p\n", *server, user);
+	if (!server[0]) strcpy(server, "vcserver");
 	dprintf("server: %s, port: %d\n", server, port);
         if (prompt) {
                 if (vim_getpass(password,sizeof(password))) pass = password;

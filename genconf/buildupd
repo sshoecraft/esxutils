@@ -2,8 +2,8 @@
 use CGI;
 use Switch;
 
-my $FROM = "Builder <builder\@localdomain.net>";
-my $TO="root\@mail.com";
+my $FROM = "Builder <builder\@company.com>";
+my $TO="root\@esxutils";
 
 my $debug = 0;
 sub dprintf { my $level = shift; if ($debug >= $level) { print "#"; printf(@_) } }

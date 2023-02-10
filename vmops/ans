@@ -9,7 +9,7 @@ use VMware::VIRuntime;
 use Data::Dumper;
 
 my $username = 'root';
-my $password = 'XXXXXX';
+my $password = 'pass';
 my $log = "/var/tmp/vmops.log";
 
 # Version 1.3
@@ -32,8 +32,6 @@ $args = "" unless($args);
 $hostname = $ARGV[0] if ($ARGV[0]);
 $action = $ARGV[1] if ($ARGV[1]);
 $args = $ARGV[2] if ($ARGV[2]);
-
-$hostname = "server"; $action="tools"; $args = "";
 
 dprintf(1,"hostname: %s, action: %s, args: %s\n", $hostname, $action, $args);
 system("echo [`date +%Y%m%d%H%M`] '\$hostname=\"$hostname\";\$action=\"$action\";\$args=\"$args\";' >> $log 2>/dev/null");

@@ -14,7 +14,8 @@ install clean cleanall::
 	mkdir -p ~/bin
 	for d in *; do if test -d $$d; then $(MAKE) $(MFLAGS) -C $$d $@; fi; done
 
-push: clean
+
+push: clean cleanall
 	git add -A .
 	git commit -m update
 	git push

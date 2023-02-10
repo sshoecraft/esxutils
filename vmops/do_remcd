@@ -1,2 +1,2 @@
 #!/bin/bash
-./remcd.pl --server $1 --username root --password XXXXXX
+./remcd.pl --server $1 --username root --password pass

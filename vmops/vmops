@@ -11,8 +11,8 @@ use Data::Dumper;
 use threads;
 
 my $username = 'root';
-my $password = 'XXXXXX';
-my $sendto = 'root@mail.com';
+my $password = 'rootpass';
+my $sendto = 'root@esxutils';
 my $tmp = tmpnam("vmopsXXXXX");
 my $log = "/var/tmp/vmops.log";
 
@@ -29,7 +29,7 @@ sub dprintf { my $level = shift; if ($debug >= $level) { print "#"; printf(@_); 
 sub dlprintf { my $level = shift; if ($debug >= $level) { printf($logfp @_); } }
 
 # Connect to DB
-my $dbh = DBI->connect("DBI:mysql:esxadmin:localhost",'esxadmin_ro') or die "Couldn't connect to database: " . DBI->errstr;
+my $dbh = DBI->connect("DBI:mysql:esxadmin:localhost",'esxadmin_ro','esxadmin_ro') or die "Couldn't connect to database: " . DBI->errstr;
 my $vn = $dbh->prepare("SELECT name FROM vms WHERE name like ?");
 my $hid = $dbh->prepare("SELECT host_id FROM vms WHERE name = ? order by last_seen desc limit 1");
 my $chid = $dbh->prepare("SELECT host_id FROM vms WHERE ci_name = ?");
@@ -281,7 +281,7 @@ sub do_unmount {
 	dprintf(1,"do_unmount; notify: %d\n", $notify);
 	if ($notify) {
 		open(my $fh,">",$tmp);
-		printf($fh "From: SysAdmin <sysadm\@localdomain.net>\n");
+		printf($fh "From: Sysadmin <sysadm\@company.com>\n");
 		printf($fh "Subject: Build complete for linux VM %s\n", $vm->name);
 		printf($fh "\n");
 		system("cat $tmp | /usr/sbin/sendmail $sendto");

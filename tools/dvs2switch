@@ -7,9 +7,9 @@ use utils;
 
 $debug = 9;
 
-my $host = "192.168.1.99";
+my $host = "vmhost";
 my $user = "root";
-my $pass = "XXXXXX";
+my $pass = "pass";
 
 #collect port group info
 sub collect { 

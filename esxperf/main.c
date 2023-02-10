@@ -31,8 +31,8 @@ void usage(void) {
 extern list getperf(struct vim_session *, char *);
 
 #define DB_NAME "esxadmin"
-#define DB_USER "esxadmin"
-#define DB_PASS "G3tB3nt"
+#define DB_USER "esxadmin_ro"
+#define DB_PASS "esxadmin_ro"
 
 int get_host_metrics(struct vim_session *s, DB *db, char *name, struct ManagedObjectReference *mo_ref, int *);
 int get_vm_metrics(struct vim_session *s, DB *db, char *name, struct ManagedObjectReference *mo_ref, int);
@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	dprintf("*server: %d, user: %p\n", *server, user);
-	if (!server[0]) strcpy(server, "localhost");
+	if (!server[0]) strcpy(server, "vcserver");
 	dprintf("server: %s, port: %d, user: %s, pass: %s\n", server, port, user, pass);
 
 	r = 1;

@@ -6,13 +6,14 @@ use VMware::VIRuntime;
 #use Term::ANSIColor;
 use Getopt::Std;
 
-my $MIGRATE_VERSION = 1.5;
+my $MIGRATE_VERSION = 1.6;
 # 1.0 2013?	init version
 # 1.1 10/15/20	added conf file/dry run/skip_os
 # 1.2 10/16/20	dont select a dest host that is in maint mode or powered off or not avail
 # 1.3 11/1/20	add local conf
 # 1.4 11/2/20	add do_time and sync_time
 # 1.5 11/3/20	do not power back on if it was powered off
+# 1.6 02/9/23	if cpu or mem hot add = 0 and hot add enabled in vm, turn it off
 
 use lib qw (/usr/local/lib/perl);
 use utils;
@@ -28,8 +29,8 @@ my $do_hwupg = 1;
 my $skip_os = "";
 my $target_hw_version = undef;
 my $do_numa = 1;
-my $do_cpuhot = 1;
-my $do_memhot = 1;
+my $do_cpuhot = 0;
+my $do_memhot = 0;
 my $do_tools = 0;
 my $do_time = 1;
 my $sync_time = 0;
@@ -407,8 +408,8 @@ if ($do_numa) {
 	}
 }
 
-# IF < 9 vcpu
 if ($do_cpuhot) {
+	# IF < 9 vcpu
 	if ($vm->config->{hardware}->{numCPU} < 9) {
 		# 4. CPU Hot-add (ignore error)
 		dprintf(1,"cpuHotAddEnabled: %d\n", $vm->config->{cpuHotAddEnabled});
@@ -422,6 +423,17 @@ if ($do_cpuhot) {
 				};
 			}
 		}
+	}
+
+# Turn off hotplug if it's enabled
+} elsif ($vm->config->{cpuHotAddEnabled}) {
+	dprintf(0,"Disabling CPU hotplug...\n");
+	if (!$dry_run) {
+		my $spec = VirtualMachineConfigSpec->new(cpuHotAddEnabled => 'false');
+		eval {
+			my $task = $vm->ReconfigVM_Task(spec => $spec);
+			getStatus($task,$vm->{name} . ": CPU reconfig successful");
+		};
 	}
 }
 
@@ -438,6 +450,17 @@ if ($do_memhot) {
 				getStatus($task,$vm->{name} . ": Memory reconfig successful");
 			};
 		}
+	}
+
+# Turn off hotplug if it's enabled
+} elsif ($vm->config->{memoryHotAddEnabled}) {
+	dprintf(0,"Disabling Memory hotplug...\n");
+	if (!$dry_run) {
+		eval {
+			my $spec = VirtualMachineConfigSpec->new(memoryHotAddEnabled => 'false');
+			my $task = $vm->ReconfigVM_Task(spec => $spec);
+			getStatus($task,$vm->{name} . ": Memory reconfig successful");
+		};
 	}
 }
 

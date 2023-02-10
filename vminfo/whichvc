@@ -6,7 +6,7 @@ use DBI;
 my $debug = 0;
 sub dprintf { my $level = shift; printf(@_) if ($debug >= $level); }
 
-my $ESXADMIN_SERVER = "tools.localdomain.net";
+my $ESXADMIN_SERVER = "esxutils";
 
 my $dbh = DBI->connect("DBI:mysql:esxadmin:$ESXADMIN_SERVER",'esxadmin_ro') or die "Couldn't connect to database: " . DBI->errstr;
 my $vms = $dbh->prepare("SELECT host_id FROM vms where name like ?");

@@ -8,8 +8,8 @@ use Pod::Usage;
 my $debug = 0;
 sub dprintf { my $level = shift; printf(@_) if ($debug >= $level); }
 
-my $VMDB_SERVER = "tools.localdomain.net";
-my $SYSDB_SERVER = "tools.localdomain.net";
+my $VMDB_SERVER = "esxutils";
+my $SYSDB_SERVER = "esxutils";
 
 #my $vmdb = DBI->connect("DBI:mysql:esxadmin:$VMDB_SERVER",'esxadmin_ro') or die "Couldn't connect to vmdb: " . DBI->errstr;
 my $vmdb = DBI->connect("DBI:mysql:esxadmin",'esxadmin_ro') or die "Couldn't connect to vmdb: " . DBI->errstr;

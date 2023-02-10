@@ -57,41 +57,7 @@ int get_farm_info(struct csession *s, struct farm *farm, struct returnval *ret, 
 	strcpy(farm->server, s->vim->server);
 	vim_results2desc(s->vim,ret->nodes,farm_desc);
 
-#if IS_HP
-	/* Get the site from the name */
-	if (strncmp(farm->name,"D3",2) == 0)
-		farm->site_id = 7;
-	else if (strncmp(farm->name,"V1",2) == 0)
-		farm->site_id = 3;
-	else {
-		char temp[8];
-
-		if (strncmp(farm->name,"Site",4) == 0) {
-			strcpy(temp,farm->name + 5);
-			farm->site_id = atoi(temp);
-		} else if (isdigit(farm->name[1])) {
-			temp[0] = farm->name[1];
-			temp[1] = 0;
-			farm->site_id = atoi(temp);
-		} else
-			farm->site_id = 0;
-	}
-#else
-	if (strncmp(farm->name,"DDC",3) == 0 || strncmp(farm->name,"ddc",3) == 0 || strncmp(farm->name,"usod",4) == 0)
-		farm->site_id = 1;
-	else if (strncmp(farm->name,"AUS",3) == 0 || strncmp(farm->name,"txau",4) == 0)
-		farm->site_id = 2;
-	else if (strncmp(farm->name,"LWV",3) == 0 || strncmp(farm->name,"txlw",4) == 0)
-		farm->site_id = 3;
-	else if (strncmp(farm->name,"USOW",4) == 0 || strncmp(farm->name,"usow",4) == 0)
-		farm->site_id = 5;
-	else if (strncmp(farm->name,"NDH",3) == 0 || strncmp(farm->name,"uson",4) == 0)
-		farm->site_id = 6;
-	else if (strncmp(farm->name,"DMZ",3) == 0)
-		farm->site_id = 7;
-	else
-		farm->site_id = 4;
-#endif
+	farm->site_id = 1;
 
 	if (farm->site_id == 0 && site_hint > 0) farm->site_id = site_hint;
 	dprintf("name: %s, site_id: %d\n", farm->name, farm->site_id);

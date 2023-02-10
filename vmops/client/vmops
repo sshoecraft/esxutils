@@ -4,7 +4,7 @@ use CGI;
 my $debug = 0;
 sub dprintf { my $level = shift; printf(@_) if ($debug >= $level); }
 
-my $SERVER = "tools.localdomain.net";
+my $SERVER = "esxutils";
 
 my $q = new CGI;
 print $q->header();

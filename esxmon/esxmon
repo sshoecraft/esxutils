@@ -1,9 +1,9 @@
 #!/bin/bash
 
-FROM="ESXAdmin <esxadmin@localdomain.net>"
-TO="root@mail.com"
-SMS="number@messaging.sprintpcs.com number2@txt.att.net"
-ME="dev@mail.com"
+FROM="ESXAdmin <esxadmin@company.com>"
+TO="root@esxutils"
+SMS=""
+ME="root@esxutils"
 
 let verbose=1
 let debug_level=0
